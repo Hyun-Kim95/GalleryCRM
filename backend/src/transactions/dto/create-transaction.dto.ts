@@ -38,11 +38,6 @@ export class CreateTransactionDto {
   @ApiProperty()
   @IsDateString()
   transactionDate: string;
-
-  @ApiProperty()
-  @IsUUID()
-  @IsNotEmpty()
-  teamId: string;
 }
 
 

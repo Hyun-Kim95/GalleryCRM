@@ -1,15 +1,25 @@
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate } from 'react-router-dom';
 import { customersApi, Customer, CustomerStatus, SearchCustomerParams } from '../api/customers.api';
+import { accessRequestsApi, AccessRequest, AccessRequestStatus, AccessRequestTargetType, CreateAccessRequestDto } from '../api/access-requests.api';
 import { useAuthStore } from '../store/authStore';
 import { formatDate } from '../utils/date';
 
 export const CustomersList = () => {
   const user = useAuthStore((state) => state.user);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useState<SearchCustomerParams>({
     page: 1,
     limit: 20,
+  });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [createForm, setCreateForm] = useState<CreateAccessRequestDto>({
+    targetType: AccessRequestTargetType.CUSTOMER,
+    targetId: '',
+    reason: '',
   });
 
   // 고객 목록 조회
@@ -29,6 +39,29 @@ export const CustomersList = () => {
       return result;
     },
   });
+
+  // 열람요청 목록 조회
+  const { data: allAccessRequests } = useQuery({
+    queryKey: ['access-requests'],
+    queryFn: () => accessRequestsApi.getAll(),
+  });
+
+  // 열람요청 생성
+  const createAccessRequestMutation = useMutation({
+    mutationFn: (data: CreateAccessRequestDto) => accessRequestsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-requests'] });
+      setShowCreateModal(false);
+      setSelectedCustomer(null);
+      setCreateForm({ targetType: AccessRequestTargetType.CUSTOMER, targetId: '', reason: '' });
+      alert('열람 요청이 생성되었습니다.');
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message ?? '열람 요청 생성 중 오류가 발생했습니다.';
+      alert(Array.isArray(msg) ? msg.join('\n') : msg);
+    },
+  });
+
 
   // 고객 삭제
   const deleteMutation = useMutation({
@@ -75,6 +108,72 @@ export const CustomersList = () => {
 
   const handlePageChange = (page: number) => {
     setSearchParams((prev) => ({ ...prev, page }));
+  };
+
+  const handleCreateAccessRequest = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setCreateForm({
+      targetType: AccessRequestTargetType.CUSTOMER,
+      targetId: customer.id,
+      reason: '',
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleSubmitAccessRequest = () => {
+    if (!createForm.reason?.trim()) {
+      alert('열람 사유를 입력해주세요.');
+      return;
+    }
+    createAccessRequestMutation.mutate(createForm);
+  };
+
+  const getCustomerAccessRequests = (customerId: string): AccessRequest[] => {
+    if (!allAccessRequests) return [];
+    return allAccessRequests.filter(
+      (req) => req.targetType === AccessRequestTargetType.CUSTOMER && req.targetId === customerId
+    );
+  };
+
+  const getPendingAccessRequests = (customerId: string): AccessRequest[] => {
+    return getCustomerAccessRequests(customerId).filter(
+      (req) => req.status === AccessRequestStatus.PENDING
+    );
+  };
+
+  const hasActiveApprovedAccessRequest = (customerId: string): boolean => {
+    const now = new Date();
+    return getCustomerAccessRequests(customerId).some((req) => {
+      if (req.status !== AccessRequestStatus.APPROVED) return false;
+      if (!req.expiresAt) return false;
+      return new Date(req.expiresAt) > now;
+    });
+  };
+
+  const getAccessRequestStatusColor = (status: AccessRequestStatus) => {
+    switch (status) {
+      case AccessRequestStatus.APPROVED:
+        return '#27ae60';
+      case AccessRequestStatus.PENDING:
+        return '#f39c12';
+      case AccessRequestStatus.REJECTED:
+        return '#e74c3c';
+      default:
+        return '#34495e';
+    }
+  };
+
+  const getAccessRequestStatusLabel = (status: AccessRequestStatus) => {
+    switch (status) {
+      case AccessRequestStatus.APPROVED:
+        return '승인됨';
+      case AccessRequestStatus.PENDING:
+        return '대기중';
+      case AccessRequestStatus.REJECTED:
+        return '거부됨';
+      default:
+        return status;
+    }
   };
 
   const getStatusColor = (status: CustomerStatus) => {
@@ -286,93 +385,166 @@ export const CustomersList = () => {
                   </tr>
                 ) : (
                   data.data.map((customer) => (
-                    <tr
-                      key={customer.id}
-                      style={{
-                        borderBottom: '1px solid #ecf0f1',
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f8f9fa';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'white';
-                      }}
-                    >
-                      <td style={{ padding: '12px' }}>
-                        <Link
-                          to={`/customers/${customer.id}`}
-                          style={{ color: '#3498db', textDecoration: 'none', fontWeight: 'bold' }}
-                        >
-                          {customer.name}
-                        </Link>
-                        {customer.isMasked && (
-                          <span
-                            style={{
-                              marginLeft: '8px',
-                              fontSize: '12px',
-                              color: '#e74c3c',
-                              backgroundColor: '#ffeaa7',
-                              padding: '2px 6px',
-                              borderRadius: '3px',
-                            }}
-                          >
-                            마스킹됨
-                          </span>
-                        )}
-                      </td>
-                      <td style={{ padding: '12px' }}>{customer.email || '-'}</td>
-                      <td style={{ padding: '12px' }}>{customer.phone || '-'}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span
-                          style={{
-                            padding: '4px 12px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            backgroundColor: getStatusColor(customer.status),
-                            color: 'white',
-                          }}
-                        >
-                          {getStatusLabel(customer.status)}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
-                        {formatDate(customer.createdAt)}
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+                      <tr
+                        key={customer.id}
+                        style={{
+                          borderBottom: '1px solid #ecf0f1',
+                          cursor: 'pointer',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#f8f9fa';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'white';
+                        }}
+                      >
+                        <td style={{ padding: '12px' }}>
                           <Link
                             to={`/customers/${customer.id}`}
-                            style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#3498db',
-                              color: 'white',
-                              textDecoration: 'none',
-                              borderRadius: '4px',
-                              fontSize: '14px',
-                            }}
+                            style={{ color: '#3498db', textDecoration: 'none', fontWeight: 'bold' }}
                           >
-                            보기
+                            {customer.name}
                           </Link>
-                          <button
-                            onClick={() => handleDelete(customer)}
+                          {customer.isMasked && (
+                            <span
+                              style={{
+                                marginLeft: '8px',
+                                fontSize: '12px',
+                                color: '#e74c3c',
+                                backgroundColor: '#ffeaa7',
+                                padding: '2px 6px',
+                                borderRadius: '3px',
+                              }}
+                            >
+                              마스킹됨
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px' }}>{customer.email || '-'}</td>
+                        <td style={{ padding: '12px' }}>{customer.phone || '-'}</td>
+                        <td style={{ padding: '12px' }}>
+                          <span
                             style={{
-                              padding: '6px 12px',
-                              backgroundColor: '#e74c3c',
+                              padding: '4px 12px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              backgroundColor: getStatusColor(customer.status),
                               color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              fontSize: '14px',
-                              cursor: deleteMutation.isPending ? 'not-allowed' : 'pointer',
-                              opacity: deleteMutation.isPending ? 0.7 : 1,
                             }}
                           >
-                            삭제
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                            {getStatusLabel(customer.status)}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
+                          {formatDate(customer.createdAt)}
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <Link
+                              to={`/customers/${customer.id}`}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#3498db',
+                                color: 'white',
+                                textDecoration: 'none',
+                                borderRadius: '4px',
+                                fontSize: '14px',
+                              }}
+                            >
+                              보기
+                            </Link>
+                            {(() => {
+                              const pendingCount = getPendingAccessRequests(customer.id).length;
+                              const hasActiveApproved = hasActiveApprovedAccessRequest(customer.id);
+                              const isMasterLike =
+                                user?.role === 'MASTER' ||
+                                user?.role === 'MANAGER' ||
+                                user?.role === 'ADMIN';
+
+                              // 사원/일반 사용자: 아직 요청 없으면 "열람요청", 있으면 "열람요청 완료"
+                              if (!isMasterLike) {
+                                // 이미 유효한 승인 열람 권한이 있으면 버튼 자체를 숨김
+                                if (hasActiveApproved) {
+                                  return null;
+                                }
+                                if (pendingCount === 0) {
+                                  return (
+                                    <button
+                                      onClick={() => handleCreateAccessRequest(customer)}
+                                      style={{
+                                        padding: '6px 12px',
+                                        backgroundColor: '#9b59b6',
+                                        color: 'white',
+                                        border: 'none',
+                                        borderRadius: '4px',
+                                        fontSize: '14px',
+                                        cursor: 'pointer',
+                                      }}
+                                    >
+                                      열람요청
+                                    </button>
+                                  );
+                                }
+                                return (
+                                  <button
+                                    disabled
+                                    style={{
+                                      padding: '6px 12px',
+                                      backgroundColor: '#7f8c8d',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      fontSize: '14px',
+                                      cursor: 'not-allowed',
+                                      opacity: 0.8,
+                                    }}
+                                  >
+                                    열람요청 완료
+                                  </button>
+                                );
+                              }
+
+                              // 관리자/마스터/팀장: 승인용으로 열람요청 목록으로 이동
+                              if (isMasterLike && pendingCount > 0) {
+                                return (
+                                  <button
+                                    onClick={() => navigate('/access-requests')}
+                                    style={{
+                                      padding: '6px 12px',
+                                      backgroundColor: '#16a085',
+                                      color: 'white',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      fontSize: '14px',
+                                      cursor: 'pointer',
+                                    }}
+                                  >
+                                    열람요청
+                                  </button>
+                                );
+                              }
+
+                              return null;
+                            })()}
+                            <button
+                              onClick={() => handleDelete(customer)}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#e74c3c',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '14px',
+                                cursor: deleteMutation.isPending ? 'not-allowed' : 'pointer',
+                                opacity: deleteMutation.isPending ? 0.7 : 1,
+                              }}
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
                   ))
                 )}
               </tbody>
@@ -414,6 +586,97 @@ export const CustomersList = () => {
             </div>
           )}
         </>
+      )}
+
+      {/* 열람요청 생성 모달 */}
+      {showCreateModal && selectedCustomer && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => {
+            setShowCreateModal(false);
+            setSelectedCustomer(null);
+            setCreateForm({ targetType: AccessRequestTargetType.CUSTOMER, targetId: '', reason: '' });
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '30px',
+              borderRadius: '8px',
+              width: '500px',
+              maxWidth: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0 }}>열람 요청 생성</h2>
+            <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+              <strong>고객:</strong> {selectedCustomer.name} ({selectedCustomer.id})
+            </div>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                열람 사유 <span style={{ color: '#e74c3c' }}>*</span>
+              </label>
+              <textarea
+                value={createForm.reason || ''}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, reason: e.target.value }))}
+                placeholder="열람 요청 사유를 입력하세요"
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setSelectedCustomer(null);
+                  setCreateForm({ targetType: AccessRequestTargetType.CUSTOMER, targetId: '', reason: '' });
+                }}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#95a5a6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSubmitAccessRequest}
+                disabled={createAccessRequestMutation.isPending}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#9b59b6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: createAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {createAccessRequestMutation.isPending ? '처리 중...' : '요청 생성'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

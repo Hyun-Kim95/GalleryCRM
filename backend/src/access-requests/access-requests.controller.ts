@@ -14,7 +14,6 @@ import { ApproveAccessRequestDto } from './dto/approve-access-request.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Permissions } from '../auth/decorators/permissions.decorator';
 import { User, UserRole } from '../entities/user.entity';
 import { UseMasking } from '../common/decorators/masking.decorator';
 
@@ -48,9 +47,8 @@ export class AccessRequestsController {
 
   @Patch(':id/approve')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MASTER)
-  @Permissions('APPROVE_ACCESS_REQUEST')
-  @ApiOperation({ summary: 'Approve or reject access request (Admin/Master only)' })
+  @Roles(UserRole.ADMIN, UserRole.MASTER, UserRole.MANAGER)
+  @ApiOperation({ summary: 'Approve or reject access request (Admin/Master/Manager only)' })
   async approve(
     @Param('id') id: string,
     @Body() approveDto: ApproveAccessRequestDto,

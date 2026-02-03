@@ -8,6 +8,7 @@ import {
 } from '../api/admin-users.api';
 import { teamsApi } from '../api/teams.api';
 import { useAuthStore } from '../store/authStore';
+import { getRoleLabel } from '../utils/role';
 
 type Mode = 'list' | 'create' | 'edit';
 
@@ -255,6 +256,7 @@ export const AdminUsers = () => {
 
   const renderEdit = () => {
     if (!selectedUser) return null;
+    const isEditingSelf = currentUser?.id === selectedUser.id && currentUser?.role === 'ADMIN';
     return (
       <div>
         <h1 style={{ marginBottom: '20px' }}>사용자 수정</h1>
@@ -285,13 +287,26 @@ export const AdminUsers = () => {
                   role: e.target.value || undefined,
                 }))
               }
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+              disabled={isEditingSelf}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #ddd',
+                backgroundColor: isEditingSelf ? '#f5f5f5' : 'white',
+                cursor: isEditingSelf ? 'not-allowed' : 'pointer',
+              }}
             >
               <option value="">변경 안 함</option>
               <option value="ADMIN">관리자</option>
               <option value="MANAGER">팀장</option>
               <option value="STAFF">사원</option>
             </select>
+            {isEditingSelf && (
+              <div style={{ fontSize: '12px', color: '#7f8c8d', marginTop: '4px' }}>
+                본인의 역할은 변경할 수 없습니다.
+              </div>
+            )}
           </div>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>팀</label>
@@ -323,12 +338,25 @@ export const AdminUsers = () => {
                   isActive: e.target.value === '' ? undefined : e.target.value === '1',
                 }))
               }
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
+              disabled={isEditingSelf}
+              style={{ 
+                width: '100%', 
+                padding: '8px', 
+                borderRadius: '4px', 
+                border: '1px solid #ddd',
+                backgroundColor: isEditingSelf ? '#f5f5f5' : 'white',
+                cursor: isEditingSelf ? 'not-allowed' : 'pointer',
+              }}
             >
               <option value="">변경 안 함</option>
               <option value="1">활성</option>
               <option value="0">비활성</option>
             </select>
+            {isEditingSelf && (
+              <div style={{ fontSize: '12px', color: '#7f8c8d', marginTop: '4px' }}>
+                본인의 활성화 상태는 변경할 수 없습니다.
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
@@ -385,20 +413,6 @@ export const AdminUsers = () => {
     setMode('edit');
   };
 
-  const roleLabel = (role: string) => {
-    switch (role) {
-      case 'MASTER':
-        return '마스터';
-      case 'ADMIN':
-        return '관리자';
-      case 'MANAGER':
-        return '팀장';
-      case 'STAFF':
-        return '사원';
-      default:
-        return role;
-    }
-  };
 
   const renderList = () => (
     <div>
@@ -431,6 +445,9 @@ export const AdminUsers = () => {
           }}
         >
           사용자 목록을 불러오는 중 오류가 발생했습니다.
+          <div style={{ marginTop: '10px', fontSize: '12px' }}>
+            {error instanceof Error ? error.message : String(error)}
+          </div>
         </div>
       )}
 
@@ -466,7 +483,7 @@ export const AdminUsers = () => {
                   <tr key={user.id} style={{ borderBottom: '1px solid #ecf0f1' }}>
                     <td style={{ padding: '12px' }}>{user.email}</td>
                     <td style={{ padding: '12px' }}>{user.name}</td>
-                    <td style={{ padding: '12px' }}>{roleLabel(user.role)}</td>
+                    <td style={{ padding: '12px' }}>{getRoleLabel(user.role)}</td>
                     <td style={{ padding: '12px' }}>{user.team?.name || '-'}</td>
                     <td style={{ padding: '12px' }}>
                       <span
@@ -483,21 +500,23 @@ export const AdminUsers = () => {
                       </span>
                     </td>
                     <td style={{ padding: '12px' }}>
-                      <button
-                        onClick={() => openEdit(user)}
-                        style={{
-                          padding: '6px 12px',
-                          marginRight: '8px',
-                          backgroundColor: '#3498db',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          fontSize: '14px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        수정
-                      </button>
+                      {user.role !== 'ADMIN' && user.role !== 'MASTER' && (
+                        <button
+                          onClick={() => openEdit(user)}
+                          style={{
+                            padding: '6px 12px',
+                            marginRight: '8px',
+                            backgroundColor: '#3498db',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          수정
+                        </button>
+                      )}
                       <button
                         onClick={() => {
                           const pw = prompt('새 비밀번호를 입력하세요:');

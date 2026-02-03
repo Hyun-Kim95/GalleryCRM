@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi, Customer, CustomerStatus, ApproveCustomerDto } from '../api/customers.api';
+import { accessRequestsApi, AccessRequest, AccessRequestStatus, AccessRequestTargetType, CreateAccessRequestDto } from '../api/access-requests.api';
 import { useAuthStore } from '../store/authStore';
 import { formatDateTime } from '../utils/date';
 
@@ -14,6 +15,8 @@ export const CustomerDetail = () => {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [approveAction, setApproveAction] = useState<'approve' | 'reject'>('approve');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [showAccessRequestModal, setShowAccessRequestModal] = useState(false);
+  const [accessRequestReason, setAccessRequestReason] = useState('');
 
   // 고객 상세 조회
   const { data: customer, isLoading, error } = useQuery({
@@ -21,6 +24,28 @@ export const CustomerDetail = () => {
     queryFn: () => customersApi.getById(id!),
     enabled: !!id,
   });
+
+  // 열람요청 목록 조회
+  const { data: allAccessRequests } = useQuery({
+    queryKey: ['access-requests'],
+    queryFn: () => accessRequestsApi.getAll(),
+  });
+
+  // 열람요청 생성
+  const createAccessRequestMutation = useMutation({
+    mutationFn: (data: CreateAccessRequestDto) => accessRequestsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['access-requests'] });
+      setShowAccessRequestModal(false);
+      setAccessRequestReason('');
+      alert('열람 요청이 생성되었습니다.');
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message ?? '열람 요청 생성 중 오류가 발생했습니다.';
+      alert(Array.isArray(msg) ? msg.join('\n') : msg);
+    },
+  });
+
 
   // 승인 요청
   const submitMutation = useMutation({
@@ -101,6 +126,66 @@ export const CustomerDetail = () => {
       default:
         return status;
     }
+  };
+
+  const getCustomerAccessRequests = (): AccessRequest[] => {
+    if (!allAccessRequests || !id) return [];
+    return allAccessRequests.filter(
+      (req) => req.targetType === AccessRequestTargetType.CUSTOMER && req.targetId === id
+    );
+  };
+
+  const getPendingAccessRequests = (): AccessRequest[] => {
+    return getCustomerAccessRequests().filter(
+      (req) => req.status === AccessRequestStatus.PENDING
+    );
+  };
+
+  const hasActiveApprovedAccess = (): boolean => {
+    const now = new Date();
+    return getCustomerAccessRequests().some((req) => {
+      if (req.status !== AccessRequestStatus.APPROVED) return false;
+      if (!req.expiresAt) return false;
+      return new Date(req.expiresAt) > now;
+    });
+  };
+
+  const getAccessRequestStatusColor = (status: AccessRequestStatus) => {
+    switch (status) {
+      case AccessRequestStatus.APPROVED:
+        return '#27ae60';
+      case AccessRequestStatus.PENDING:
+        return '#f39c12';
+      case AccessRequestStatus.REJECTED:
+        return '#e74c3c';
+      default:
+        return '#34495e';
+    }
+  };
+
+  const getAccessRequestStatusLabel = (status: AccessRequestStatus) => {
+    switch (status) {
+      case AccessRequestStatus.APPROVED:
+        return '승인됨';
+      case AccessRequestStatus.PENDING:
+        return '대기중';
+      case AccessRequestStatus.REJECTED:
+        return '거부됨';
+      default:
+        return status;
+    }
+  };
+
+  const handleCreateAccessRequest = () => {
+    if (!accessRequestReason.trim()) {
+      alert('열람 사유를 입력해주세요.');
+      return;
+    }
+    createAccessRequestMutation.mutate({
+      targetType: AccessRequestTargetType.CUSTOMER,
+      targetId: id!,
+      reason: accessRequestReason,
+    });
   };
 
   if (isLoading) {
@@ -246,6 +331,36 @@ export const CustomerDetail = () => {
                 반려
               </button>
             </>
+          )}
+          {!(user?.role === 'MASTER' || user?.role === 'MANAGER') && !hasActiveApprovedAccess() && (
+            <button
+              onClick={() => setShowAccessRequestModal(true)}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#9b59b6',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              열람요청
+            </button>
+          )}
+          {getPendingAccessRequests().length > 0 && (
+            <button
+              onClick={() => navigate('/access-requests')}
+              style={{
+                padding: '10px 20px',
+                backgroundColor: '#16a085',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+            >
+              열람요청
+            </button>
           )}
         </div>
       </div>
@@ -450,6 +565,168 @@ export const CustomerDetail = () => {
                 }}
               >
                 {approveMutation.isPending ? '처리 중...' : approveAction === 'approve' ? '승인' : '반려'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 열람요청 목록 */}
+      {getCustomerAccessRequests().length > 0 && (
+        <div
+          style={{
+            backgroundColor: 'white',
+            padding: '30px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            marginBottom: '20px',
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: '20px' }}>열람요청 목록</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            {getCustomerAccessRequests().map((request) => (
+              <div
+                key={request.id}
+                style={{
+                  padding: '15px',
+                  borderRadius: '4px',
+                  border: '1px solid #ddd',
+                  backgroundColor: '#f8f9fa',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <div>
+                    <strong>요청자:</strong> {request.requester?.name || '-'} ({request.requester?.email || '-'})
+                  </div>
+                  <span
+                    style={{
+                      padding: '4px 12px',
+                      borderRadius: '12px',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      backgroundColor: getAccessRequestStatusColor(request.status),
+                      color: 'white',
+                    }}
+                  >
+                    {getAccessRequestStatusLabel(request.status)}
+                  </span>
+                </div>
+                {request.reason && (
+                  <div style={{ marginBottom: '8px', fontSize: '14px', color: '#555' }}>
+                    <strong>사유:</strong> {request.reason}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: '20px', fontSize: '12px', color: '#7f8c8d' }}>
+                  <div>
+                    <strong>요청일시:</strong> {formatDateTime(request.createdAt)}
+                  </div>
+                  {request.status === AccessRequestStatus.APPROVED && request.expiresAt && (
+                    <div>
+                      <strong>만료일시:</strong> {formatDateTime(request.expiresAt)}
+                    </div>
+                  )}
+                  {request.approvedBy && (
+                    <div>
+                      <strong>처리자:</strong> {request.approvedBy.name}
+                    </div>
+                  )}
+                </div>
+                {request.status === AccessRequestStatus.REJECTED && request.rejectionReason && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: '#e74c3c' }}>
+                    <strong>거부 사유:</strong> {request.rejectionReason}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 열람요청 생성 모달 */}
+      {showAccessRequestModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => {
+            setShowAccessRequestModal(false);
+            setAccessRequestReason('');
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '30px',
+              borderRadius: '8px',
+              width: '500px',
+              maxWidth: '90%',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ marginTop: 0 }}>열람 요청 생성</h2>
+            {customer && (
+              <div style={{ marginBottom: '15px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
+                <strong>고객:</strong> {customer.name}
+              </div>
+            )}
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+                열람 사유 <span style={{ color: '#e74c3c' }}>*</span>
+              </label>
+              <textarea
+                value={accessRequestReason}
+                onChange={(e) => setAccessRequestReason(e.target.value)}
+                placeholder="열람 요청 사유를 입력하세요"
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => {
+                  setShowAccessRequestModal(false);
+                  setAccessRequestReason('');
+                }}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#95a5a6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleCreateAccessRequest}
+                disabled={createAccessRequestMutation.isPending}
+                style={{
+                  padding: '10px 20px',
+                  backgroundColor: '#9b59b6',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: createAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {createAccessRequestMutation.isPending ? '처리 중...' : '요청 생성'}
               </button>
             </div>
           </div>

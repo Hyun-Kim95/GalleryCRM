@@ -55,7 +55,6 @@ export interface CreateTransactionDto {
   currency?: string;
   contractTerms?: string;
   transactionDate: string;
-  teamId: string;
 }
 
 export const transactionsApi = {

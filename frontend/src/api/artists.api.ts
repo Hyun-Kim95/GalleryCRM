@@ -11,6 +11,14 @@ export interface Artist {
   updatedAt: string;
 }
 
+export interface CreateArtistDto {
+  name: string;
+  nationality?: string;
+  genre?: string;
+  bio?: string;
+  isActive?: boolean;
+}
+
 export const artistsApi = {
   getAll: async (): Promise<Artist[]> => {
     const response = await apiClient.get<Artist[]>('/artists');
@@ -19,6 +27,11 @@ export const artistsApi = {
 
   getById: async (id: string): Promise<Artist> => {
     const response = await apiClient.get<Artist>(`/artists/${id}`);
+    return response.data;
+  },
+
+  create: async (data: CreateArtistDto): Promise<Artist> => {
+    const response = await apiClient.post<Artist>('/artists', data);
     return response.data;
   },
 };
