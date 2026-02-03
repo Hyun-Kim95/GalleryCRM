@@ -16,6 +16,8 @@ import { AuditLogService } from '../audit-logs/audit-logs.service';
 import { AuditAction, AuditEntityType } from '../entities/audit-log.entity';
 import { EntityHistoryService } from '../entity-history/entity-history.service';
 import { HistoryEntityType } from '../entities/entity-history.entity';
+import { AccessRequestsService } from '../access-requests/access-requests.service';
+import { AccessRequestTargetType } from '../entities/access-request.entity';
 
 @Injectable()
 export class CustomersService {
@@ -24,6 +26,7 @@ export class CustomersService {
     private customerRepository: Repository<Customer>,
     private auditLogService: AuditLogService,
     private entityHistoryService: EntityHistoryService,
+    private accessRequestsService: AccessRequestsService,
   ) {}
 
   async create(createDto: CreateCustomerDto, user: User): Promise<Customer> {
@@ -104,8 +107,25 @@ export class CustomersService {
 
     const [data, total] = await query.getManyAndCount();
 
+    // 열람 승인된 고객에 대해서는 리스트에서도 마스킹이 풀리도록 createdById를 런타임에 교체
+    const processedData = await Promise.all(
+      data.map(async (customer) => {
+        const hasAccess = await this.accessRequestsService.checkAccessPermission(
+          AccessRequestTargetType.CUSTOMER,
+          customer.id,
+          user.id,
+        );
+
+        if (hasAccess) {
+          (customer as any).createdById = user.id;
+        }
+
+        return customer;
+      }),
+    );
+
     return {
-      data,
+      data: processedData,
       total,
       page,
       limit,
@@ -129,7 +149,7 @@ export class CustomersService {
     }
 
     // 권한 확인
-    this.checkAccessPermission(customer, user);
+    await this.checkAccessPermission(customer, user);
 
     // Audit Log (조회)
     await this.auditLogService.create({
@@ -338,7 +358,7 @@ export class CustomersService {
     });
   }
 
-  private checkAccessPermission(customer: Customer, user: User): void {
+  private async checkAccessPermission(customer: Customer, user: User): Promise<void> {
     // 관리자는 모든 데이터 접근 가능
     if (user.role === UserRole.ADMIN || user.role === UserRole.MASTER) {
       return;
@@ -349,7 +369,20 @@ export class CustomersService {
       return;
     }
 
-    // 같은 팀 데이터 접근 가능
+    // 먼저 열람 요청 승인 여부 확인 (CUSTOMER 기준)
+    const hasAccess = await this.accessRequestsService.checkAccessPermission(
+      AccessRequestTargetType.CUSTOMER,
+      customer.id,
+      user.id,
+    );
+
+    if (hasAccess) {
+      // 승인된 열람 요청이 있는 경우, 마스킹 해제를 위해 runtime 상에서 생성자로 취급
+      (customer as any).createdById = user.id;
+      return;
+    }
+
+    // 열람 승인은 없지만, 같은 팀 데이터인 경우 접근 허용 (마스킹 레벨은 팀 기준으로 적용)
     if (customer.teamId === user.teamId) {
       return;
     }

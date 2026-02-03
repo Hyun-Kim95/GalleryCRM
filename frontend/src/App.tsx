@@ -10,6 +10,10 @@ import { CustomerDetail } from './pages/CustomerDetail';
 import { CustomerForm } from './pages/CustomerForm';
 import { TransactionsList } from './pages/TransactionsList';
 import { TransactionDetail } from './pages/TransactionDetail';
+import { TransactionForm } from './pages/TransactionForm';
+import { ArtistsList } from './pages/ArtistsList';
+import { ArtistDetail } from './pages/ArtistDetail';
+import { ArtistForm } from './pages/ArtistForm';
 import { AccessRequestsList } from './pages/AccessRequestsList';
 import { ApprovalsDashboard } from './pages/ApprovalsDashboard';
 import { AdminUsers } from './pages/AdminUsers';
@@ -98,11 +102,51 @@ function App() {
             }
           />
           <Route
+            path="/transactions/new"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TransactionForm />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/transactions/:id"
             element={
               <ProtectedRoute>
                 <Layout>
                   <TransactionDetail />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/artists"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ArtistsList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/artists/new"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ArtistForm />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/artists/:id"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ArtistDetail />
                 </Layout>
               </ProtectedRoute>
             }

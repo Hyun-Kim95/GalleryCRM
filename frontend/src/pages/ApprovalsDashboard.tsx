@@ -307,7 +307,7 @@ export const ApprovalsDashboard = () => {
                   <th style={{ padding: '12px', textAlign: 'left' }}>요청자</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>대상</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>사유</th>
-                  <th style={{ padding: '12px', textAlign: 'left' }}>요청일</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>요청일시</th>
                   <th style={{ padding: '12px', textAlign: 'left' }}>작업</th>
                 </tr>
               </thead>
@@ -327,7 +327,7 @@ export const ApprovalsDashboard = () => {
                       {request.reason || '-'}
                     </td>
                     <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
-                      {new Date(request.createdAt).toLocaleDateString('ko-KR')}
+                      {formatDateTime(request.createdAt)}
                     </td>
                     <td style={{ padding: '12px' }}>
                       <div style={{ display: 'flex', gap: '8px' }}>

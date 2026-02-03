@@ -80,7 +80,9 @@ export class MaskingInterceptor implements NestInterceptor {
       }
 
       // Customer 엔티티 마스킹
-      if (masked.email !== undefined || masked.phone !== undefined) {
+      // User(요청자/승인자 등)도 email/phone 을 가지고 있기 때문에,
+      // createdById 가 존재하는 경우에만 "고객/거래 주체"로 간주하고 마스킹을 적용한다.
+      if ((masked.email !== undefined || masked.phone !== undefined) && masked.createdById !== undefined) {
         const level = this.getMaskingLevel(masked, user);
         if (masked.name) masked.name = maskName(masked.name, level);
         if (masked.email) masked.email = maskEmail(masked.email, level);

@@ -12,6 +12,8 @@ import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { AuditLogService } from '../audit-logs/audit-logs.service';
 import { AuditAction, AuditEntityType } from '../entities/audit-log.entity';
 import { EntityHistoryService } from '../entity-history/entity-history.service';
+import { AccessRequestsService } from '../access-requests/access-requests.service';
+import { AccessRequestTargetType } from '../entities/access-request.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -20,19 +22,13 @@ export class TransactionsService {
     private transactionRepository: Repository<Transaction>,
     private auditLogService: AuditLogService,
     private entityHistoryService: EntityHistoryService,
+    private accessRequestsService: AccessRequestsService,
   ) {}
 
   async create(createDto: CreateTransactionDto, user: User): Promise<Transaction> {
-    if (
-      user.teamId !== createDto.teamId &&
-      user.role !== UserRole.ADMIN &&
-      user.role !== UserRole.MASTER
-    ) {
-      throw new ForbiddenException('Cannot create transaction for other team');
-    }
-
     const transaction = this.transactionRepository.create({
       ...createDto,
+      teamId: user.teamId,
       createdById: user.id,
       status: TransactionStatus.DRAFT,
       transactionDate: new Date(createDto.transactionDate),
@@ -52,7 +48,8 @@ export class TransactionsService {
   }
 
   async findAll(user: User) {
-    const query = this.transactionRepository.createQueryBuilder('transaction')
+    const query = this.transactionRepository
+      .createQueryBuilder('transaction')
       .leftJoinAndSelect('transaction.customer', 'customer')
       .leftJoinAndSelect('transaction.artist', 'artist')
       .leftJoinAndSelect('transaction.createdBy', 'createdBy')
@@ -64,7 +61,26 @@ export class TransactionsService {
 
     query.orderBy('transaction.createdAt', 'DESC');
 
-    return query.getMany();
+    const data = await query.getMany();
+
+    // 열람 승인된 거래에 대해서는 리스트에서도 마스킹이 풀리도록 createdById를 런타임에 교체
+    const processedData = await Promise.all(
+      data.map(async (transaction) => {
+        const hasAccess = await this.accessRequestsService.checkAccessPermission(
+          AccessRequestTargetType.TRANSACTION,
+          transaction.id,
+          user.id,
+        );
+
+        if (hasAccess) {
+          (transaction as any).createdById = user.id;
+        }
+
+        return transaction;
+      }),
+    );
+
+    return processedData;
   }
 
   async findOne(id: string, user: User): Promise<Transaction> {
@@ -77,7 +93,7 @@ export class TransactionsService {
       throw new NotFoundException('Transaction not found');
     }
 
-    this.checkAccessPermission(transaction, user);
+    await this.checkAccessPermission(transaction, user);
 
     await this.auditLogService.create({
       userId: user.id,
@@ -116,12 +132,26 @@ export class TransactionsService {
     return saved;
   }
 
-  private checkAccessPermission(transaction: Transaction, user: User): void {
+  private async checkAccessPermission(
+    transaction: Transaction,
+    user: User,
+  ): Promise<void> {
     if (user.role === UserRole.ADMIN || user.role === UserRole.MASTER) {
       return;
     }
 
     if (transaction.createdById === user.id) {
+      return;
+    }
+
+    const hasAccess = await this.accessRequestsService.checkAccessPermission(
+      AccessRequestTargetType.TRANSACTION,
+      transaction.id,
+      user.id,
+    );
+
+    if (hasAccess) {
+      (transaction as any).createdById = user.id;
       return;
     }
 

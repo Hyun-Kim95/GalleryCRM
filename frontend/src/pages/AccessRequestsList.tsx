@@ -1,39 +1,50 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { accessRequestsApi, AccessRequest, AccessRequestStatus, AccessRequestTargetType, CreateAccessRequestDto } from '../api/access-requests.api';
+import { accessRequestsApi, AccessRequest, AccessRequestStatus, AccessRequestTargetType, ApproveAccessRequestDto } from '../api/access-requests.api';
 import { useAuthStore } from '../store/authStore';
+import { formatDateTime } from '../utils/date';
 
 export const AccessRequestsList = () => {
   const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState<CreateAccessRequestDto>({
-    targetType: AccessRequestTargetType.CUSTOMER,
-    targetId: '',
-    reason: '',
-  });
-
   const { data: requests, isLoading, error } = useQuery({
     queryKey: ['access-requests'],
     queryFn: () => accessRequestsApi.getAll(),
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: CreateAccessRequestDto) => accessRequestsApi.create(data),
+  // 열람요청 승인/거부
+  const approveAccessRequestMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ApproveAccessRequestDto }) =>
+      accessRequestsApi.approve(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['access-requests'] });
-      setShowCreateModal(false);
-      setCreateForm({ targetType: AccessRequestTargetType.CUSTOMER, targetId: '', reason: '' });
-      alert('열람 요청이 생성되었습니다.');
+      alert('처리되었습니다.');
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message ?? '열람 요청 승인/거부 중 오류가 발생했습니다.';
+      alert(Array.isArray(msg) ? msg.join('\n') : msg);
     },
   });
 
-  const handleCreate = () => {
-    if (!createForm.targetId.trim()) {
-      alert('대상 ID를 입력해주세요.');
-      return;
+  const handleApproveAccessRequest = (request: AccessRequest, action: 'approve' | 'reject') => {
+    if (action === 'reject') {
+      const rejectionReason = prompt('거부 사유를 입력하세요:');
+      if (!rejectionReason) return;
+
+      const data: ApproveAccessRequestDto = {
+        status: AccessRequestStatus.REJECTED,
+        rejectionReason,
+      };
+      approveAccessRequestMutation.mutate({ id: request.id, data });
+    } else {
+      const hours = prompt('열람 허용 기간(시간)을 입력하세요 (기본: 24):', '24');
+      const accessDurationHours = hours ? parseInt(hours) : 24;
+
+      const data: ApproveAccessRequestDto = {
+        status: AccessRequestStatus.APPROVED,
+        accessDurationHours,
+      };
+      approveAccessRequestMutation.mutate({ id: request.id, data });
     }
-    createMutation.mutate(createForm);
   };
 
   const getStatusColor = (status: AccessRequestStatus) => {
@@ -82,19 +93,6 @@ export const AccessRequestsList = () => {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h1 style={{ margin: 0 }}>열람 요청</h1>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#3498db',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-          }}
-        >
-          + 새 열람 요청
-        </button>
       </div>
 
       {isLoading && <div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div>}
@@ -114,14 +112,17 @@ export const AccessRequestsList = () => {
                 <th style={{ padding: '12px', textAlign: 'left' }}>대상 ID</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>사유</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>상태</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>만료일</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>요청일</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>만료일시</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>요청일시</th>
+                {(user?.role === 'MASTER' || user?.role === 'MANAGER') && (
+                  <th style={{ padding: '12px', textAlign: 'left' }}>작업</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {requests.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#95a5a6' }}>
+                  <td colSpan={(user?.role === 'MASTER' || user?.role === 'MANAGER') ? 8 : 7} style={{ padding: '40px', textAlign: 'center', color: '#95a5a6' }}>
                     열람 요청이 없습니다.
                   </td>
                 </tr>
@@ -169,13 +170,53 @@ export const AccessRequestsList = () => {
                     <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
                       {request.expiresAt
                         ? isExpired(request.expiresAt)
-                          ? `만료됨 (${new Date(request.expiresAt).toLocaleDateString('ko-KR')})`
-                          : new Date(request.expiresAt).toLocaleDateString('ko-KR')
+                          ? `만료됨 (${formatDateTime(request.expiresAt)})`
+                          : formatDateTime(request.expiresAt)
                         : '-'}
                     </td>
                     <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
-                      {new Date(request.createdAt).toLocaleDateString('ko-KR')}
+                      {formatDateTime(request.createdAt)}
                     </td>
+                    {(user?.role === 'MASTER' || user?.role === 'MANAGER') && (
+                      <td style={{ padding: '12px' }}>
+                        {request.status === AccessRequestStatus.PENDING ? (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              onClick={() => handleApproveAccessRequest(request, 'approve')}
+                              disabled={approveAccessRequestMutation.isPending}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#27ae60',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              승인
+                            </button>
+                            <button
+                              onClick={() => handleApproveAccessRequest(request, 'reject')}
+                              disabled={approveAccessRequestMutation.isPending}
+                              style={{
+                                padding: '6px 12px',
+                                backgroundColor: '#e74c3c',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                              }}
+                            >
+                              거부
+                            </button>
+                          </div>
+                        ) : (
+                          <span style={{ color: '#95a5a6', fontSize: '12px' }}>-</span>
+                        )}
+                      </td>
+                    )}
                   </tr>
                 ))
               )}
@@ -184,128 +225,6 @@ export const AccessRequestsList = () => {
         </div>
       )}
 
-      {/* 생성 모달 */}
-      {showCreateModal && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 1000,
-          }}
-          onClick={() => setShowCreateModal(false)}
-        >
-          <div
-            style={{
-              backgroundColor: 'white',
-              padding: '30px',
-              borderRadius: '8px',
-              width: '500px',
-              maxWidth: '90%',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 style={{ marginTop: 0 }}>새 열람 요청</h2>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                대상 유형 <span style={{ color: '#e74c3c' }}>*</span>
-              </label>
-              <select
-                value={createForm.targetType}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    targetType: e.target.value as AccessRequestTargetType,
-                  }))
-                }
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '16px',
-                }}
-              >
-                <option value={AccessRequestTargetType.CUSTOMER}>고객</option>
-                <option value={AccessRequestTargetType.TRANSACTION}>거래</option>
-              </select>
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                대상 ID <span style={{ color: '#e74c3c' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={createForm.targetId}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, targetId: e.target.value }))}
-                placeholder="고객 또는 거래 ID를 입력하세요"
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '16px',
-                }}
-              />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>사유</label>
-              <textarea
-                value={createForm.reason || ''}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, reason: e.target.value }))}
-                placeholder="열람 요청 사유를 입력하세요"
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: '10px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  fontSize: '14px',
-                  fontFamily: 'inherit',
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setCreateForm({ targetType: AccessRequestTargetType.CUSTOMER, targetId: '', reason: '' });
-                }}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#95a5a6',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                취소
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={createMutation.isPending}
-                style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#3498db',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: createMutation.isPending ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {createMutation.isPending ? '처리 중...' : '요청 생성'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

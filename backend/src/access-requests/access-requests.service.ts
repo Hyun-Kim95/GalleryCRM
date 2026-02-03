@@ -64,8 +64,8 @@ export class AccessRequestsService {
   }
 
   async findAll(requester: User): Promise<AccessRequest[]> {
-    // 관리자는 모든 요청 조회 가능, 그 외는 본인 요청만
-    if (requester.role === UserRole.ADMIN || requester.role === UserRole.MASTER) {
+    // 관리자, 마스터, 팀장은 모든 요청 조회 가능, 그 외는 본인 요청만
+    if (requester.role === UserRole.ADMIN || requester.role === UserRole.MASTER || requester.role === UserRole.MANAGER) {
       return this.accessRequestRepository.find({
         relations: ['requester', 'approvedBy'],
         order: { createdAt: 'DESC' },
@@ -106,9 +106,9 @@ export class AccessRequestsService {
     approveDto: ApproveAccessRequestDto,
     approver: User,
   ): Promise<AccessRequest> {
-    // 관리자만 승인 가능
-    if (approver.role !== UserRole.ADMIN && approver.role !== UserRole.MASTER) {
-      throw new ForbiddenException('Only admins can approve access requests');
+    // 관리자, 마스터, 팀장만 승인 가능
+    if (approver.role !== UserRole.ADMIN && approver.role !== UserRole.MASTER && approver.role !== UserRole.MANAGER) {
+      throw new ForbiddenException('Only admins, masters, and managers can approve access requests');
     }
 
     const request = await this.accessRequestRepository.findOne({

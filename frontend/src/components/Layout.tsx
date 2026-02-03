@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { getRoleLabel } from '../utils/role';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -60,6 +61,20 @@ export const Layout = ({ children }: LayoutProps) => {
             }}
           >
             고객 관리
+          </Link>
+          <Link
+            to="/artists"
+            style={{
+              display: 'block',
+              padding: '12px',
+              marginBottom: '8px',
+              color: isActive('/artists') ? '#3498db' : 'white',
+              textDecoration: 'none',
+              backgroundColor: isActive('/artists') ? '#34495e' : 'transparent',
+              borderRadius: '4px',
+            }}
+          >
+            작가 관리
           </Link>
           <Link
             to="/transactions"
@@ -140,7 +155,7 @@ export const Layout = ({ children }: LayoutProps) => {
         <div style={{ borderTop: '1px solid #34495e', paddingTop: '20px' }}>
           <div style={{ marginBottom: '10px', fontSize: '14px' }}>
             <div>{user?.name}</div>
-            <div style={{ fontSize: '12px', color: '#95a5a6' }}>{user?.role}</div>
+            <div style={{ fontSize: '12px', color: '#95a5a6' }}>{getRoleLabel(user?.role)}</div>
           </div>
           <button
             onClick={handleLogout}

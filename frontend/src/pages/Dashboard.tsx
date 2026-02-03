@@ -1,21 +1,9 @@
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import { getRoleLabel } from '../utils/role';
 
 export const Dashboard = () => {
   const user = useAuthStore((state) => state.user);
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return '관리자';
-      case 'MANAGER':
-        return '팀장';
-      case 'STAFF':
-        return '사원';
-      default:
-        return role;
-    }
-  };
 
   return (
     <div>
