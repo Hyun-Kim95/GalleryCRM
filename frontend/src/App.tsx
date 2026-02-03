@@ -8,10 +8,8 @@ import { Dashboard } from './pages/Dashboard';
 import { CustomersList } from './pages/CustomersList';
 import { CustomerDetail } from './pages/CustomerDetail';
 import { CustomerForm } from './pages/CustomerForm';
-import { TransactionsList } from './pages/TransactionsList';
-import { TransactionDetail } from './pages/TransactionDetail';
-import { TransactionForm } from './pages/TransactionForm';
 import { ArtistsList } from './pages/ArtistsList';
+import { AuditLogsList } from './pages/AuditLogsList';
 import { ArtistDetail } from './pages/ArtistDetail';
 import { ArtistForm } from './pages/ArtistForm';
 import { AccessRequestsList } from './pages/AccessRequestsList';
@@ -92,36 +90,6 @@ function App() {
             }
           />
           <Route
-            path="/transactions"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <TransactionsList />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/transactions/new"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <TransactionForm />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/transactions/:id"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <TransactionDetail />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
             path="/artists"
             element={
               <ProtectedRoute>
@@ -142,11 +110,31 @@ function App() {
             }
           />
           <Route
+            path="/artists/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ArtistForm />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/artists/:id"
             element={
               <ProtectedRoute>
                 <Layout>
                   <ArtistDetail />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/audit-logs"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <AuditLogsList />
                 </Layout>
               </ProtectedRoute>
             }

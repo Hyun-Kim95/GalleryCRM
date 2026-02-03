@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { artistsApi, Artist } from '../api/artists.api';
+import { artistsApi, Artist, ArtistStatus } from '../api/artists.api';
 import { formatDate } from '../utils/date';
 import { useAuthStore } from '../store/authStore';
 
@@ -10,6 +10,36 @@ export const ArtistsList = () => {
     queryKey: ['artists'],
     queryFn: () => artistsApi.getAll(),
   });
+
+  const getStatusColor = (status: ArtistStatus) => {
+    switch (status) {
+      case ArtistStatus.APPROVED:
+        return '#27ae60';
+      case ArtistStatus.PENDING:
+        return '#f39c12';
+      case ArtistStatus.REJECTED:
+        return '#e74c3c';
+      case ArtistStatus.DRAFT:
+        return '#95a5a6';
+      default:
+        return '#34495e';
+    }
+  };
+
+  const getStatusLabel = (status: ArtistStatus) => {
+    switch (status) {
+      case ArtistStatus.APPROVED:
+        return '승인됨';
+      case ArtistStatus.PENDING:
+        return '대기중';
+      case ArtistStatus.REJECTED:
+        return '반려됨';
+      case ArtistStatus.DRAFT:
+        return '초안';
+      default:
+        return status;
+    }
+  };
 
   return (
     <div>
@@ -22,7 +52,7 @@ export const ArtistsList = () => {
         }}
       >
         <h1 style={{ margin: 0 }}>작가 관리</h1>
-        {(user?.role === 'ADMIN' || user?.role === 'MASTER') && (
+        {user && (
           <Link
             to="/artists/new"
             style={{
@@ -70,7 +100,8 @@ export const ArtistsList = () => {
                 <th style={{ padding: '12px', textAlign: 'left' }}>이름</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>국적</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>장르</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>상태</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>승인 상태</th>
+                <th style={{ padding: '12px', textAlign: 'left' }}>활성 상태</th>
                 <th style={{ padding: '12px', textAlign: 'left' }}>생성일</th>
               </tr>
             </thead>
@@ -78,7 +109,7 @@ export const ArtistsList = () => {
               {artists.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     style={{
                       padding: '40px',
                       textAlign: 'center',
@@ -119,6 +150,20 @@ export const ArtistsList = () => {
                       {artist.nationality || '-'}
                     </td>
                     <td style={{ padding: '12px' }}>{artist.genre || '-'}</td>
+                    <td style={{ padding: '12px' }}>
+                      <span
+                        style={{
+                          padding: '4px 12px',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          backgroundColor: getStatusColor(artist.status),
+                          color: 'white',
+                        }}
+                      >
+                        {getStatusLabel(artist.status)}
+                      </span>
+                    </td>
                     <td style={{ padding: '12px' }}>
                       <span
                         style={{

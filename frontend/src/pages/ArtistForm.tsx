@@ -1,17 +1,37 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { artistsApi, CreateArtistDto } from '../api/artists.api';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { artistsApi, CreateArtistDto, UpdateArtistDto } from '../api/artists.api';
 
 export const ArtistForm = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const isEdit = !!id;
 
   const [name, setName] = useState('');
   const [nationality, setNationality] = useState('');
   const [genre, setGenre] = useState('');
   const [bio, setBio] = useState('');
   const [isActive, setIsActive] = useState(true);
+
+  // 작가 상세 조회 (수정 모드일 때)
+  const { data: artist, isLoading: isLoadingArtist } = useQuery({
+    queryKey: ['artist', id],
+    queryFn: () => artistsApi.getById(id!),
+    enabled: isEdit && !!id,
+  });
+
+  // 수정 모드일 때 폼 데이터 채우기
+  useEffect(() => {
+    if (artist && isEdit) {
+      setName(artist.name);
+      setNationality(artist.nationality || '');
+      setGenre(artist.genre || '');
+      setBio(artist.bio || '');
+      setIsActive(artist.isActive);
+    }
+  }, [artist, isEdit]);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateArtistDto) => artistsApi.create(data),
@@ -26,6 +46,20 @@ export const ArtistForm = () => {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: (data: UpdateArtistDto) => artistsApi.update(id!, data),
+    onSuccess: (artist) => {
+      queryClient.invalidateQueries({ queryKey: ['artists'] });
+      queryClient.invalidateQueries({ queryKey: ['artist', id] });
+      navigate(`/artists/${artist.id}`);
+    },
+    onError: (error: any) => {
+      const msg =
+        error?.response?.data?.message ?? '작가 수정 중 오류가 발생했습니다.';
+      alert(Array.isArray(msg) ? msg.join('\n') : msg);
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -34,7 +68,7 @@ export const ArtistForm = () => {
       return;
     }
 
-    const payload: CreateArtistDto = {
+    const payload: CreateArtistDto | UpdateArtistDto = {
       name: name.trim(),
       nationality: nationality.trim() || undefined,
       genre: genre.trim() || undefined,
@@ -42,21 +76,29 @@ export const ArtistForm = () => {
       isActive,
     };
 
-    createMutation.mutate(payload);
+    if (isEdit) {
+      updateMutation.mutate(payload);
+    } else {
+      createMutation.mutate(payload as CreateArtistDto);
+    }
   };
 
-  const isLoading = createMutation.isPending;
+  if (isLoadingArtist) {
+    return <div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div>;
+  }
+
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div>
       <div style={{ marginBottom: '30px' }}>
         <Link
-          to="/artists"
+          to={isEdit ? `/artists/${id}` : '/artists'}
           style={{ color: '#3498db', textDecoration: 'none' }}
         >
-          ← 목록으로 돌아가기
+          ← {isEdit ? '상세로 돌아가기' : '목록으로 돌아가기'}
         </Link>
-        <h1 style={{ margin: '10px 0 0 0' }}>새 작가 등록</h1>
+        <h1 style={{ margin: '10px 0 0 0' }}>{isEdit ? '작가 수정' : '새 작가 등록'}</h1>
       </div>
 
       <form
@@ -199,7 +241,7 @@ export const ArtistForm = () => {
         >
           <button
             type="button"
-            onClick={() => navigate('/artists')}
+            onClick={() => navigate(isEdit ? `/artists/${id}` : '/artists')}
             style={{
               padding: '10px 20px',
               backgroundColor: '#95a5a6',
@@ -224,7 +266,7 @@ export const ArtistForm = () => {
               opacity: isLoading ? 0.7 : 1,
             }}
           >
-            {isLoading ? '생성 중...' : '생성'}
+            {isLoading ? (isEdit ? '수정 중...' : '생성 중...') : (isEdit ? '수정' : '생성')}
           </button>
         </div>
       </form>

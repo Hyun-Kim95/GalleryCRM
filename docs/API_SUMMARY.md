@@ -34,19 +34,12 @@
 - 승인/반려
 - 권한: Admin, Manager
 
-## 거래 관리 (Transactions)
+## 활동 기록 (Audit Logs)
 
-### POST /transactions
-- 거래 생성
-
-### GET /transactions
-- 거래 목록 조회
-
-### GET /transactions/:id
-- 거래 상세 조회
-
-### POST /transactions/:id/submit
-- 승인 요청
+### GET /audit-logs
+- 활동 기록 조회
+- Query Parameters: userId, entityType, entityId, limit
+- 권한: 일반 사용자는 본인 로그만, 관리자는 모든 로그 조회 가능
 
 ## 열람 요청 (Access Requests)
 

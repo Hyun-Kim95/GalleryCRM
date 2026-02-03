@@ -52,12 +52,11 @@
 1. **Auth Module** - 인증/인가
 2. **Users Module** - 사용자 관리
 3. **Customers Module** - 고객 관리 (CRUD + 승인)
-4. **Transactions Module** - 거래 관리
-5. **Artists Module** - 작가 관리
-6. **Teams Module** - 팀 관리
-7. **Access Requests Module** - 열람 요청
-8. **Audit Logs Module** - 감사 로그
-9. **Entity History Module** - 변경 이력
+4. **Artists Module** - 작가 관리
+5. **Teams Module** - 팀 관리
+6. **Access Requests Module** - 열람 요청
+7. **Audit Logs Module** - 활동 기록 (감사 로그)
+8. **Entity History Module** - 변경 이력
 
 ### Frontend 구조
 - API 클라이언트 및 인터셉터
@@ -71,10 +70,9 @@
 2. **Team** - 팀
 3. **Customer** - 고객 (승인 상태 관리)
 4. **Artist** - 작가
-5. **Transaction** - 거래 (승인 상태 관리)
-6. **AccessRequest** - 열람 요청
-7. **AuditLog** - 감사 로그
-8. **EntityHistory** - 엔티티 변경 이력
+5. **AccessRequest** - 열람 요청
+6. **AuditLog** - 활동 기록 (감사 로그)
+7. **EntityHistory** - 엔티티 변경 이력
 
 ## 보안 기능
 
@@ -102,11 +100,8 @@
 - `POST /customers/:id/submit` - 승인 요청
 - `PATCH /customers/:id/approve` - 승인/반려
 
-### 거래 관리
-- `POST /transactions` - 생성
-- `GET /transactions` - 조회
-- `GET /transactions/:id` - 상세 조회
-- `POST /transactions/:id/submit` - 승인 요청
+### 활동 기록
+- `GET /audit-logs` - 활동 기록 조회 (필터: userId, entityType, entityId, limit)
 
 ### 열람 요청
 - `POST /access-requests` - 요청 생성
@@ -121,11 +116,11 @@
 ## 다음 단계 제안
 
 ### Frontend UI 완성
-- [ ] 고객 관리 페이지 (리스트, 상세, 등록/수정)
-- [ ] 거래 관리 페이지
-- [ ] 열람 요청 페이지
-- [ ] 승인 대시보드 (관리자/팀장)
-- [ ] Audit Log 조회 페이지
+- [x] 고객 관리 페이지 (리스트, 상세, 등록/수정)
+- [x] 작가 관리 페이지
+- [x] 열람 요청 페이지
+- [x] 승인 대시보드 (관리자/팀장)
+- [x] 활동 기록 조회 페이지
 
 ### 추가 기능
 - [ ] 사용자 관리 페이지 (관리자)
