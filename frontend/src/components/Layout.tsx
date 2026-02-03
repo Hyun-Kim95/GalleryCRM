@@ -77,18 +77,18 @@ export const Layout = ({ children }: LayoutProps) => {
             작가 관리
           </Link>
           <Link
-            to="/transactions"
+            to="/audit-logs"
             style={{
               display: 'block',
               padding: '12px',
               marginBottom: '8px',
-              color: isActive('/transactions') ? '#3498db' : 'white',
+              color: isActive('/audit-logs') ? '#3498db' : 'white',
               textDecoration: 'none',
-              backgroundColor: isActive('/transactions') ? '#34495e' : 'transparent',
+              backgroundColor: isActive('/audit-logs') ? '#34495e' : 'transparent',
               borderRadius: '4px',
             }}
           >
-            거래 관리
+            활동 기록
           </Link>
           <Link
             to="/access-requests"
