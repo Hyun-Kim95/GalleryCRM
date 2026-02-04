@@ -65,6 +65,21 @@ export const Login = () => {
             border: 'none',
             borderRadius: '4px',
             cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) {
+              e.currentTarget.style.backgroundColor = '#0056b3';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!loading) {
+              e.currentTarget.style.backgroundColor = '#007bff';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }
           }}
         >
           {loading ? 'Logging in...' : 'Login'}
@@ -73,5 +88,6 @@ export const Login = () => {
     </div>
   );
 };
+
 
 

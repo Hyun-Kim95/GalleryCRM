@@ -204,6 +204,17 @@ export const AdminUsers = () => {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#7f8c8d';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#95a5a6';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             취소
@@ -245,6 +256,21 @@ export const AdminUsers = () => {
               border: 'none',
               borderRadius: '4px',
               cursor: createMutation.isPending ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!createMutation.isPending) {
+                e.currentTarget.style.backgroundColor = '#2980b9';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!createMutation.isPending) {
+                e.currentTarget.style.backgroundColor = '#3498db';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }
             }}
           >
             {createMutation.isPending ? '생성 중...' : '생성'}
@@ -373,6 +399,17 @@ export const AdminUsers = () => {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#7f8c8d';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#95a5a6';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               취소
@@ -393,6 +430,21 @@ export const AdminUsers = () => {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: updateMutation.isPending ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!updateMutation.isPending) {
+                  e.currentTarget.style.backgroundColor = '#2980b9';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!updateMutation.isPending) {
+                  e.currentTarget.style.backgroundColor = '#3498db';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
               }}
             >
               {updateMutation.isPending ? '저장 중...' : '저장'}
@@ -427,6 +479,17 @@ export const AdminUsers = () => {
             border: 'none',
             borderRadius: '4px',
             cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#2980b9';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#3498db';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         >
           + 사용자 생성
@@ -512,6 +575,17 @@ export const AdminUsers = () => {
                             borderRadius: '4px',
                             fontSize: '14px',
                             cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#2980b9';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#3498db';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                         >
                           수정
@@ -531,6 +605,17 @@ export const AdminUsers = () => {
                           borderRadius: '4px',
                           fontSize: '14px',
                           cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#d35400';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#e67e22';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                       >
                         비밀번호 초기화

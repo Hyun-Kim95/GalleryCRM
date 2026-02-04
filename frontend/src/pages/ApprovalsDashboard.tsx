@@ -139,7 +139,7 @@ export const ApprovalsDashboard = () => {
 
   return (
     <div>
-      <h1 style={{ marginBottom: '30px' }}>승인 대시보드</h1>
+      <h1 style={{ marginBottom: '30px' }}>승인 관리</h1>
 
       {/* 탭 */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '2px solid #ecf0f1' }}>
@@ -153,6 +153,19 @@ export const ApprovalsDashboard = () => {
             color: activeTab === 'customers' ? '#3498db' : '#7f8c8d',
             fontWeight: activeTab === 'customers' ? 'bold' : 'normal',
             cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'customers') {
+              e.currentTarget.style.color = '#3498db';
+              e.currentTarget.style.backgroundColor = '#f8f9fa';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'customers') {
+              e.currentTarget.style.color = '#7f8c8d';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
           }}
         >
           고객 승인 ({pendingCustomers?.data.length || 0})
@@ -167,6 +180,19 @@ export const ApprovalsDashboard = () => {
             color: activeTab === 'artists' ? '#3498db' : '#7f8c8d',
             fontWeight: activeTab === 'artists' ? 'bold' : 'normal',
             cursor: 'pointer',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (activeTab !== 'artists') {
+              e.currentTarget.style.color = '#3498db';
+              e.currentTarget.style.backgroundColor = '#f8f9fa';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (activeTab !== 'artists') {
+              e.currentTarget.style.color = '#7f8c8d';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }
           }}
         >
           작가 승인 ({pendingArtists?.length || 0})
@@ -182,6 +208,19 @@ export const ApprovalsDashboard = () => {
               color: activeTab === 'access-requests' ? '#3498db' : '#7f8c8d',
               fontWeight: activeTab === 'access-requests' ? 'bold' : 'normal',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (activeTab !== 'access-requests') {
+                e.currentTarget.style.color = '#3498db';
+                e.currentTarget.style.backgroundColor = '#f8f9fa';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (activeTab !== 'access-requests') {
+                e.currentTarget.style.color = '#7f8c8d';
+                e.currentTarget.style.backgroundColor = 'transparent';
+              }
             }}
           >
             열람 요청 ({filteredAccessRequests.length})
@@ -229,8 +268,23 @@ export const ApprovalsDashboard = () => {
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: approveCustomerMutation.isPending ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!approveCustomerMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#229954';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!approveCustomerMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#27ae60';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }
                           }}
                         >
                           승인
@@ -244,8 +298,23 @@ export const ApprovalsDashboard = () => {
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: approveCustomerMutation.isPending ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!approveCustomerMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#c0392b';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!approveCustomerMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#e74c3c';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }
                           }}
                         >
                           반려
@@ -302,8 +371,23 @@ export const ApprovalsDashboard = () => {
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: approveArtistMutation.isPending ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!approveArtistMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#229954';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!approveArtistMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#27ae60';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }
                           }}
                         >
                           승인
@@ -317,8 +401,23 @@ export const ApprovalsDashboard = () => {
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: approveArtistMutation.isPending ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!approveArtistMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#c0392b';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!approveArtistMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#e74c3c';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }
                           }}
                         >
                           반려
@@ -380,8 +479,23 @@ export const ApprovalsDashboard = () => {
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!approveAccessRequestMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#229954';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!approveAccessRequestMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#27ae60';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }
                           }}
                         >
                           승인
@@ -395,8 +509,23 @@ export const ApprovalsDashboard = () => {
                             color: 'white',
                             border: 'none',
                             borderRadius: '4px',
-                            cursor: 'pointer',
+                            cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
                             fontSize: '14px',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!approveAccessRequestMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#c0392b';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!approveAccessRequestMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#e74c3c';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }
                           }}
                         >
                           거부

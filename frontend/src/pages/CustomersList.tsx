@@ -223,6 +223,18 @@ export const CustomersList = () => {
             color: 'white',
             textDecoration: 'none',
             borderRadius: '4px',
+            transition: 'all 0.2s ease',
+            display: 'inline-block',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#2980b9';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#3498db';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = 'none';
           }}
         >
           + 새 고객 등록
@@ -331,6 +343,17 @@ export const CustomersList = () => {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#2980b9';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#3498db';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             검색
@@ -347,6 +370,17 @@ export const CustomersList = () => {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#7f8c8d';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#95a5a6';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             초기화
@@ -385,19 +419,19 @@ export const CustomersList = () => {
                   </tr>
                 ) : (
                   data.data.map((customer) => (
-                      <tr
-                        key={customer.id}
-                        style={{
-                          borderBottom: '1px solid #ecf0f1',
-                          cursor: 'pointer',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#f8f9fa';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'white';
-                        }}
-                      >
+                    <tr
+                      key={customer.id}
+                      style={{
+                        borderBottom: '1px solid #ecf0f1',
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f8f9fa';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white';
+                      }}
+                    >
                         <td style={{ padding: '12px' }}>
                           <Link
                             to={`/customers/${customer.id}`}
@@ -450,6 +484,18 @@ export const CustomersList = () => {
                                 textDecoration: 'none',
                                 borderRadius: '4px',
                                 fontSize: '14px',
+                                transition: 'all 0.2s ease',
+                                display: 'inline-block',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#2980b9';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#3498db';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
                               }}
                             >
                               보기
@@ -480,6 +526,17 @@ export const CustomersList = () => {
                                         borderRadius: '4px',
                                         fontSize: '14px',
                                         cursor: 'pointer',
+                                        transition: 'all 0.2s ease',
+                                      }}
+                                      onMouseEnter={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#8e44ad';
+                                        e.currentTarget.style.transform = 'translateY(-1px)';
+                                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                                      }}
+                                      onMouseLeave={(e) => {
+                                        e.currentTarget.style.backgroundColor = '#9b59b6';
+                                        e.currentTarget.style.transform = 'translateY(0)';
+                                        e.currentTarget.style.boxShadow = 'none';
                                       }}
                                     >
                                       열람요청
@@ -518,6 +575,17 @@ export const CustomersList = () => {
                                       borderRadius: '4px',
                                       fontSize: '14px',
                                       cursor: 'pointer',
+                                      transition: 'all 0.2s ease',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#138d75';
+                                      e.currentTarget.style.transform = 'translateY(-1px)';
+                                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#16a085';
+                                      e.currentTarget.style.transform = 'translateY(0)';
+                                      e.currentTarget.style.boxShadow = 'none';
                                     }}
                                   >
                                     열람요청
@@ -536,8 +604,18 @@ export const CustomersList = () => {
                                 border: 'none',
                                 borderRadius: '4px',
                                 fontSize: '14px',
-                                cursor: deleteMutation.isPending ? 'not-allowed' : 'pointer',
-                                opacity: deleteMutation.isPending ? 0.7 : 1,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#c0392b';
+                                e.currentTarget.style.transform = 'translateY(-1px)';
+                                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#e74c3c';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
                               }}
                             >
                               삭제
@@ -553,40 +631,74 @@ export const CustomersList = () => {
 
           {/* 페이지네이션 */}
           {data.totalPages > 1 && (
-            <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
-              <button
-                onClick={() => handlePageChange(data.page - 1)}
-                disabled={data.page === 1}
-                style={{
-                  padding: '8px 16px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  backgroundColor: data.page === 1 ? '#ecf0f1' : 'white',
-                  cursor: data.page === 1 ? 'not-allowed' : 'pointer',
-                }}
-              >
-                이전
-              </button>
-              <span style={{ padding: '8px 16px', display: 'flex', alignItems: 'center' }}>
-                {data.page} / {data.totalPages} (총 {data.total}건)
-              </span>
-              <button
-                onClick={() => handlePageChange(data.page + 1)}
-                disabled={data.page >= data.totalPages}
-                style={{
-                  padding: '8px 16px',
-                  border: '1px solid #ddd',
-                  borderRadius: '4px',
-                  backgroundColor: data.page >= data.totalPages ? '#ecf0f1' : 'white',
-                  cursor: data.page >= data.totalPages ? 'not-allowed' : 'pointer',
-                }}
-              >
-                다음
-              </button>
-            </div>
-          )}
-        </>
-      )}
+                <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
+                  <button
+                    onClick={() => handlePageChange(data.page - 1)}
+                    disabled={data.page === 1}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      backgroundColor: data.page === 1 ? '#ecf0f1' : 'white',
+                      cursor: data.page === 1 ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (data.page !== 1) {
+                        e.currentTarget.style.backgroundColor = '#f8f9fa';
+                        e.currentTarget.style.borderColor = '#3498db';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (data.page !== 1) {
+                        e.currentTarget.style.backgroundColor = 'white';
+                        e.currentTarget.style.borderColor = '#ddd';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }
+                    }}
+                  >
+                    이전
+                  </button>
+                  <span style={{ padding: '8px 16px', display: 'flex', alignItems: 'center' }}>
+                    {data.page} / {data.totalPages} (총 {data.total}건)
+                  </span>
+                  <button
+                    onClick={() => handlePageChange(data.page + 1)}
+                    disabled={data.page >= data.totalPages}
+                    style={{
+                      padding: '8px 16px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      backgroundColor: data.page >= data.totalPages ? '#ecf0f1' : 'white',
+                      cursor: data.page >= data.totalPages ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (data.page < data.totalPages) {
+                        e.currentTarget.style.backgroundColor = '#f8f9fa';
+                        e.currentTarget.style.borderColor = '#3498db';
+                        e.currentTarget.style.transform = 'translateY(-1px)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (data.page < data.totalPages) {
+                        e.currentTarget.style.backgroundColor = 'white';
+                        e.currentTarget.style.borderColor = '#ddd';
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }
+                    }}
+                  >
+                    다음
+                  </button>
+                </div>
+              )}
+          </>
+        )}
 
       {/* 열람요청 생성 모달 */}
       {showCreateModal && selectedCustomer && (
@@ -656,6 +768,17 @@ export const CustomersList = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#7f8c8d';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#95a5a6';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 취소
@@ -670,6 +793,21 @@ export const CustomersList = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: createAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!createAccessRequestMutation.isPending) {
+                    e.currentTarget.style.backgroundColor = '#8e44ad';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!createAccessRequestMutation.isPending) {
+                    e.currentTarget.style.backgroundColor = '#9b59b6';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
                 }}
               >
                 {createAccessRequestMutation.isPending ? '처리 중...' : '요청 생성'}
