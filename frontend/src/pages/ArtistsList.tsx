@@ -63,6 +63,7 @@ export const ArtistsList = () => {
               borderRadius: '4px',
               transition: 'all 0.2s ease',
               display: 'inline-block',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#2980b9';
@@ -72,7 +73,7 @@ export const ArtistsList = () => {
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '#3498db';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
             }}
           >
             + 새 작가 등록
