@@ -243,6 +243,18 @@ export const CustomerDetail = () => {
                 color: 'white',
                 textDecoration: 'none',
                 borderRadius: '4px',
+                transition: 'all 0.2s ease',
+                display: 'inline-block',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#2980b9';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#3498db';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               수정
@@ -275,6 +287,17 @@ export const CustomerDetail = () => {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#c0392b';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#e74c3c';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               삭제
@@ -291,6 +314,21 @@ export const CustomerDetail = () => {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: submitMutation.isPending ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!submitMutation.isPending) {
+                  e.currentTarget.style.backgroundColor = '#e67e22';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!submitMutation.isPending) {
+                  e.currentTarget.style.backgroundColor = '#f39c12';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
               }}
             >
               {submitMutation.isPending ? '처리 중...' : '승인 요청'}
@@ -310,6 +348,17 @@ export const CustomerDetail = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#229954';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#27ae60';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 승인
@@ -326,6 +375,17 @@ export const CustomerDetail = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#c0392b';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e74c3c';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 반려
@@ -342,6 +402,17 @@ export const CustomerDetail = () => {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#8e44ad';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#9b59b6';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               열람요청
@@ -357,6 +428,17 @@ export const CustomerDetail = () => {
                 border: 'none',
                 borderRadius: '4px',
                 cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#138d75';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#16a085';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               열람요청
@@ -548,6 +630,17 @@ export const CustomerDetail = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#7f8c8d';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#95a5a6';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 취소
@@ -562,6 +655,21 @@ export const CustomerDetail = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: approveMutation.isPending ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!approveMutation.isPending) {
+                    e.currentTarget.style.backgroundColor = approveAction === 'approve' ? '#229954' : '#c0392b';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!approveMutation.isPending) {
+                    e.currentTarget.style.backgroundColor = approveAction === 'approve' ? '#27ae60' : '#e74c3c';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
                 }}
               >
                 {approveMutation.isPending ? '처리 중...' : approveAction === 'approve' ? '승인' : '반려'}
@@ -710,6 +818,17 @@ export const CustomerDetail = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#7f8c8d';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#95a5a6';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
                 }}
               >
                 취소
@@ -724,6 +843,21 @@ export const CustomerDetail = () => {
                   border: 'none',
                   borderRadius: '4px',
                   cursor: createAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  if (!createAccessRequestMutation.isPending) {
+                    e.currentTarget.style.backgroundColor = '#8e44ad';
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!createAccessRequestMutation.isPending) {
+                    e.currentTarget.style.backgroundColor = '#9b59b6';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
                 }}
               >
                 {createAccessRequestMutation.isPending ? '처리 중...' : '요청 생성'}

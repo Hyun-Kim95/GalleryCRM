@@ -131,6 +131,17 @@ export const TeamsManagement = () => {
                 borderRadius: '4px',
                 cursor: 'pointer',
                 fontSize: '14px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = isCreateOpen ? '#95a5a6' : '#27ae60';
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = isCreateOpen ? '#7f8c8d' : '#2ecc71';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
               }}
             >
               {isCreateOpen ? '새 팀 생성 닫기' : '새 팀 생성'}
@@ -249,6 +260,21 @@ export const TeamsManagement = () => {
                 borderRadius: '4px',
                 cursor: createMutation.isPending ? 'not-allowed' : 'pointer',
                 fontSize: '14px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!createMutation.isPending) {
+                  e.currentTarget.style.backgroundColor = '#27ae60';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!createMutation.isPending) {
+                  e.currentTarget.style.backgroundColor = '#2ecc71';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }
               }}
             >
               {createMutation.isPending ? '생성 중...' : '생성'}
@@ -334,6 +360,17 @@ export const TeamsManagement = () => {
                           borderRadius: '4px',
                           fontSize: '12px',
                           cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = '#2980b9';
+                          e.currentTarget.style.transform = 'translateY(-1px)';
+                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = '#3498db';
+                          e.currentTarget.style.transform = 'translateY(0)';
+                          e.currentTarget.style.boxShadow = 'none';
                         }}
                       >
                         {isEditing ? '편집 취소' : '팀 정보 편집'}
@@ -451,6 +488,17 @@ export const TeamsManagement = () => {
                             borderRadius: '4px',
                             fontSize: '12px',
                             cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#95a5a6';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#bdc3c7';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = 'none';
                           }}
                         >
                           취소
@@ -479,6 +527,21 @@ export const TeamsManagement = () => {
                             borderRadius: '4px',
                             fontSize: '12px',
                             cursor: updateMutation.isPending ? 'not-allowed' : 'pointer',
+                            transition: 'all 0.2s ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!updateMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#2980b9';
+                              e.currentTarget.style.transform = 'translateY(-1px)';
+                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!updateMutation.isPending) {
+                              e.currentTarget.style.backgroundColor = '#3498db';
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = 'none';
+                            }
                           }}
                         >
                           {updateMutation.isPending ? '저장 중...' : '저장'}

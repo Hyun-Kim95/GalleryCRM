@@ -44,6 +44,19 @@ export const Layout = ({ children }: LayoutProps) => {
               textDecoration: 'none',
               backgroundColor: isActive('/') ? '#34495e' : 'transparent',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive('/')) {
+                e.currentTarget.style.backgroundColor = '#34495e';
+                e.currentTarget.style.paddingLeft = '16px';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive('/')) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '12px';
+              }
             }}
           >
             대시보드
@@ -58,6 +71,19 @@ export const Layout = ({ children }: LayoutProps) => {
               textDecoration: 'none',
               backgroundColor: isActive('/customers') ? '#34495e' : 'transparent',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive('/customers')) {
+                e.currentTarget.style.backgroundColor = '#34495e';
+                e.currentTarget.style.paddingLeft = '16px';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive('/customers')) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '12px';
+              }
             }}
           >
             고객 관리
@@ -72,6 +98,19 @@ export const Layout = ({ children }: LayoutProps) => {
               textDecoration: 'none',
               backgroundColor: isActive('/artists') ? '#34495e' : 'transparent',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive('/artists')) {
+                e.currentTarget.style.backgroundColor = '#34495e';
+                e.currentTarget.style.paddingLeft = '16px';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive('/artists')) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '12px';
+              }
             }}
           >
             작가 관리
@@ -86,6 +125,19 @@ export const Layout = ({ children }: LayoutProps) => {
               textDecoration: 'none',
               backgroundColor: isActive('/audit-logs') ? '#34495e' : 'transparent',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive('/audit-logs')) {
+                e.currentTarget.style.backgroundColor = '#34495e';
+                e.currentTarget.style.paddingLeft = '16px';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive('/audit-logs')) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '12px';
+              }
             }}
           >
             활동 기록
@@ -100,6 +152,19 @@ export const Layout = ({ children }: LayoutProps) => {
               textDecoration: 'none',
               backgroundColor: isActive('/access-requests') ? '#34495e' : 'transparent',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive('/access-requests')) {
+                e.currentTarget.style.backgroundColor = '#34495e';
+                e.currentTarget.style.paddingLeft = '16px';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive('/access-requests')) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '12px';
+              }
             }}
           >
             열람 요청
@@ -114,6 +179,19 @@ export const Layout = ({ children }: LayoutProps) => {
               textDecoration: 'none',
               backgroundColor: isActive('/teams') ? '#34495e' : 'transparent',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!isActive('/teams')) {
+                e.currentTarget.style.backgroundColor = '#34495e';
+                e.currentTarget.style.paddingLeft = '16px';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive('/teams')) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.paddingLeft = '12px';
+              }
             }}
           >
             팀 관리
@@ -129,6 +207,19 @@ export const Layout = ({ children }: LayoutProps) => {
                 textDecoration: 'none',
                 backgroundColor: isActive('/admin/users') ? '#34495e' : 'transparent',
                 borderRadius: '4px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive('/admin/users')) {
+                  e.currentTarget.style.backgroundColor = '#34495e';
+                  e.currentTarget.style.paddingLeft = '16px';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive('/admin/users')) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.paddingLeft = '12px';
+                }
               }}
             >
               사용자 관리
@@ -145,9 +236,22 @@ export const Layout = ({ children }: LayoutProps) => {
                 textDecoration: 'none',
                 backgroundColor: isActive('/approvals') ? '#34495e' : 'transparent',
                 borderRadius: '4px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive('/approvals')) {
+                  e.currentTarget.style.backgroundColor = '#34495e';
+                  e.currentTarget.style.paddingLeft = '16px';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive('/approvals')) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.paddingLeft = '12px';
+                }
               }}
             >
-              승인 대시보드
+              승인 관리
             </Link>
           )}
         </nav>
@@ -167,6 +271,17 @@ export const Layout = ({ children }: LayoutProps) => {
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#c0392b';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#e74c3c';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             로그아웃

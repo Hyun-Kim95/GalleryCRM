@@ -61,6 +61,18 @@ export const ArtistsList = () => {
               color: 'white',
               textDecoration: 'none',
               borderRadius: '4px',
+              transition: 'all 0.2s ease',
+              display: 'inline-block',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#2980b9';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#3498db';
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
             }}
           >
             + 새 작가 등록

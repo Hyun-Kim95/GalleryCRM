@@ -192,6 +192,21 @@ export const AccessRequestsList = () => {
                                 borderRadius: '4px',
                                 fontSize: '12px',
                                 cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!approveAccessRequestMutation.isPending) {
+                                  e.currentTarget.style.backgroundColor = '#229954';
+                                  e.currentTarget.style.transform = 'translateY(-1px)';
+                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!approveAccessRequestMutation.isPending) {
+                                  e.currentTarget.style.backgroundColor = '#27ae60';
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = 'none';
+                                }
                               }}
                             >
                               승인
@@ -207,6 +222,21 @@ export const AccessRequestsList = () => {
                                 borderRadius: '4px',
                                 fontSize: '12px',
                                 cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!approveAccessRequestMutation.isPending) {
+                                  e.currentTarget.style.backgroundColor = '#c0392b';
+                                  e.currentTarget.style.transform = 'translateY(-1px)';
+                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!approveAccessRequestMutation.isPending) {
+                                  e.currentTarget.style.backgroundColor = '#e74c3c';
+                                  e.currentTarget.style.transform = 'translateY(0)';
+                                  e.currentTarget.style.boxShadow = 'none';
+                                }
                               }}
                             >
                               거부
