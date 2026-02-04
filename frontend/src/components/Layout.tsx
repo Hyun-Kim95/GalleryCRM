@@ -19,11 +19,22 @@ export const Layout = ({ children }: LayoutProps) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh' }}>
-      {/* Sidebar */}
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#ecf0f1',
+        // 사이드바 실제 넓이: width 220px + 좌우 padding 20px*2 = 260px
+        paddingLeft: '260px',
+      }}
+    >
+      {/* Sidebar - 화면에 고정 */}
       <aside
         style={{
-          width: '250px',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: '220px',
           backgroundColor: '#2c3e50',
           color: 'white',
           padding: '20px',
@@ -272,6 +283,7 @@ export const Layout = ({ children }: LayoutProps) => {
               borderRadius: '4px',
               cursor: 'pointer',
               transition: 'all 0.2s ease',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = '#c0392b';
@@ -281,7 +293,7 @@ export const Layout = ({ children }: LayoutProps) => {
             onMouseLeave={(e) => {
               e.currentTarget.style.backgroundColor = '#e74c3c';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
             }}
           >
             로그아웃
@@ -289,8 +301,8 @@ export const Layout = ({ children }: LayoutProps) => {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main style={{ flex: 1, padding: '30px', backgroundColor: '#ecf0f1' }}>
+      {/* Main Content - 사이드바 오른쪽에 배치 */}
+      <main style={{ padding: '30px', minHeight: '100vh' }}>
         {children}
       </main>
     </div>

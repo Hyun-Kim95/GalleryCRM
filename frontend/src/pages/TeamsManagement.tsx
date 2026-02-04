@@ -361,6 +361,7 @@ export const TeamsManagement = () => {
                           fontSize: '12px',
                           cursor: 'pointer',
                           transition: 'all 0.2s ease',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = '#2980b9';
@@ -370,7 +371,7 @@ export const TeamsManagement = () => {
                         onMouseLeave={(e) => {
                           e.currentTarget.style.backgroundColor = '#3498db';
                           e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = 'none';
+                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
                         }}
                       >
                         {isEditing ? '편집 취소' : '팀 정보 편집'}

@@ -26,7 +26,13 @@ export const Login = () => {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '100px auto', padding: '20px' }}>
+    <div
+      style={{
+        maxWidth: '360px',
+        margin: '80px auto',
+        padding: '24px',
+      }}
+    >
       <h1>Prism CRM - Login</h1>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '15px' }}>
@@ -37,7 +43,14 @@ export const Login = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '8px',
+                marginTop: '5px',
+                borderRadius: '4px',
+                border: '1px solid #ddd',
+              }}
             />
           </label>
         </div>
@@ -49,7 +62,14 @@ export const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                padding: '8px',
+                marginTop: '5px',
+                borderRadius: '4px',
+                border: '1px solid #ddd',
+              }}
             />
           </label>
         </div>
@@ -59,13 +79,15 @@ export const Login = () => {
           disabled={loading}
           style={{
             width: '100%',
-            padding: '10px',
+            boxSizing: 'border-box',
+            padding: '8px',
             backgroundColor: '#007bff',
             color: 'white',
             border: 'none',
             borderRadius: '4px',
             cursor: loading ? 'not-allowed' : 'pointer',
             transition: 'all 0.2s ease',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
           onMouseEnter={(e) => {
             if (!loading) {
@@ -78,7 +100,7 @@ export const Login = () => {
             if (!loading) {
               e.currentTarget.style.backgroundColor = '#007bff';
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
+              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
             }
           }}
         >
