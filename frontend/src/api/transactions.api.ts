@@ -57,6 +57,11 @@ export interface CreateTransactionDto {
   transactionDate: string;
 }
 
+export interface ApproveTransactionDto {
+  status: TransactionStatus.APPROVED | TransactionStatus.REJECTED;
+  rejectionReason?: string;
+}
+
 export const transactionsApi = {
   getAll: async (): Promise<Transaction[]> => {
     const response = await apiClient.get<Transaction[]>('/transactions');
@@ -75,6 +80,11 @@ export const transactionsApi = {
 
   submitForApproval: async (id: string): Promise<Transaction> => {
     const response = await apiClient.post<Transaction>(`/transactions/${id}/submit`);
+    return response.data;
+  },
+
+  approve: async (id: string, data: ApproveTransactionDto): Promise<Transaction> => {
+    const response = await apiClient.patch<Transaction>(`/transactions/${id}/approve`, data);
     return response.data;
   },
 };

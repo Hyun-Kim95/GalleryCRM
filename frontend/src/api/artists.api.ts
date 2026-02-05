@@ -16,6 +16,10 @@ export interface Artist {
   isActive: boolean;
   status: ArtistStatus;
   createdById: string | null;
+  createdBy: {
+    id: string;
+    name: string;
+  } | null;
   approvedById: string | null;
   approvedBy: {
     id: string;

@@ -47,7 +47,7 @@ export class Transaction {
   currency: string;
 
   @Column({ name: 'contract_terms', type: 'text', nullable: true })
-  contractTerms: string;
+  contractTerms: string | null;
 
   @Column({ name: 'transaction_date', type: 'date' })
   transactionDate: Date;
@@ -95,6 +95,7 @@ export class Transaction {
   @OneToMany(() => EntityHistory, (history) => history.transaction)
   histories: EntityHistory[];
 }
+
 
 
 

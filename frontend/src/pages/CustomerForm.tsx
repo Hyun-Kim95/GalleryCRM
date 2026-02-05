@@ -1,239 +1,169 @@
-import { useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customersApi, CreateCustomerDto, UpdateCustomerDto } from '../api/customers.api';
 import { useAuthStore } from '../store/authStore';
 
-export const CustomerForm = () => {
+export const CustomerForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const user = useAuthStore((state) => state.user);
+  const { user } = useAuthStore();
   const isEdit = !!id;
 
-  // 고객 상세 조회 (수정 모드일 때)
-  const { data: customer, isLoading: isLoadingCustomer } = useQuery({
+  const [formData, setFormData] = useState<CreateCustomerDto>({
+    name: '',
+    email: '',
+    phone: '',
+    address: '',
+    notes: '',
+  });
+
+  const { data: customer } = useQuery({
     queryKey: ['customer', id],
     queryFn: () => customersApi.getById(id!),
     enabled: isEdit && !!id,
   });
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<CreateCustomerDto>({
-    defaultValues: {},
-  });
-
-  // 수정 모드일 때 폼 데이터 채우기
   useEffect(() => {
     if (customer && isEdit) {
-      reset({
-        name: customer.name,
+      setFormData({
+        name: customer.name || '',
         email: customer.email || '',
         phone: customer.phone || '',
         address: customer.address || '',
         notes: customer.notes || '',
       });
     }
-  }, [customer, isEdit, reset]);
+  }, [customer, isEdit]);
 
-  // 생성/수정 Mutation
   const createMutation = useMutation({
     mutationFn: (data: CreateCustomerDto) => customersApi.create(data),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
-      navigate(`/customers/${data.id}`);
+      navigate('/customers');
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateCustomerDto) => customersApi.update(id!, data),
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
       queryClient.invalidateQueries({ queryKey: ['customer', id] });
-      navigate(`/customers/${data.id}`);
+      navigate(`/customers/${id}`);
     },
   });
 
-  const onSubmit = (data: CreateCustomerDto | UpdateCustomerDto) => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (isEdit) {
-      updateMutation.mutate(data);
+      updateMutation.mutate(formData);
     } else {
-      createMutation.mutate(data as CreateCustomerDto);
+      createMutation.mutate(formData);
     }
   };
 
-  if (isLoadingCustomer) {
-    return <div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div>;
-  }
-
-  const isLoading = createMutation.isPending || updateMutation.isPending;
-
   return (
     <div>
-      <div style={{ marginBottom: '30px' }}>
-        <Link to={isEdit ? `/customers/${id}` : '/customers'} style={{ color: '#3498db', textDecoration: 'none' }}>
-          ← {isEdit ? '상세로 돌아가기' : '목록으로 돌아가기'}
-        </Link>
-        <h1 style={{ margin: '10px 0 0 0' }}>{isEdit ? '고객 수정' : '새 고객 등록'}</h1>
+      <div className="page-header">
+        <h1 className="page-title">{isEdit ? '고객 수정' : '등록'}</h1>
       </div>
 
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        style={{
-          backgroundColor: 'white',
-          padding: '30px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '20px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+      <div className="card">
+        <form onSubmit={handleSubmit} className="form-container">
+          {!isEdit && (
+            <div className="form-group" style={{ 
+              padding: '0.75rem', 
+              backgroundColor: '#e8f4f8', 
+              borderRadius: '4px',
+              marginBottom: '1rem',
+              border: '1px solid #3498db'
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#2c3e50', fontWeight: 500 }}>
+                담당 팀: {user?.team?.name || '팀 없음'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                이 고객은 현재 로그인한 사용자의 팀에 자동으로 할당됩니다.
+              </div>
+            </div>
+          )}
+          <div className="form-group">
+            <label htmlFor="name" className="form-label">
               이름 <span style={{ color: '#e74c3c' }}>*</span>
             </label>
             <input
+              id="name"
               type="text"
-              {...register('name', { required: '이름을 입력해주세요' })}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: errors.name ? '2px solid #e74c3c' : '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-              }}
-            />
-            {errors.name && (
-              <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '5px' }}>{errors.name.message}</div>
-            )}
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>이메일</label>
-            <input
-              type="email"
-              {...register('email')}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-              }}
+              className="form-input"
+              value={formData.name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              required
             />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>전화번호</label>
-            <input
-              type="tel"
-              {...register('phone')}
-              placeholder="010-1234-5678"
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-              }}
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="email" className="form-label">이메일</label>
+              <input
+                id="email"
+                type="email"
+                className="form-input"
+                value={formData.email}
+                onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="phone" className="form-label">전화번호</label>
+              <input
+                id="phone"
+                type="tel"
+                className="form-input"
+                value={formData.phone}
+                onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+              />
+            </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>주소</label>
+          <div className="form-group">
+            <label htmlFor="address" className="form-label">주소</label>
             <input
+              id="address"
               type="text"
-              {...register('address')}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-              }}
+              className="form-input"
+              value={formData.address}
+              onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
             />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>메모</label>
+          <div className="form-group">
+            <label htmlFor="notes" className="form-label">메모</label>
             <textarea
-              {...register('notes')}
+              id="notes"
+              className="form-textarea"
+              value={formData.notes}
+              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
               rows={5}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-                fontFamily: 'inherit',
-              }}
             />
           </div>
-        </div>
 
-        <div style={{ marginTop: '30px', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#95a5a6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#7f8c8d';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#95a5a6';
-              e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            }}
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#3498db',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.backgroundColor = '#2980b9';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.backgroundColor = '#3498db';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-              }
-            }}
-          >
-            {isLoading ? '저장 중...' : isEdit ? '수정' : '등록'}
-          </button>
-        </div>
-      </form>
+          <div className="button-group" style={{ marginTop: '1.5rem' }}>
+            <button
+              type="submit"
+              className="button button-primary"
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? '저장 중...' : '저장'}
+            </button>
+            <button
+              type="button"
+              className="button button-outline"
+              onClick={() => navigate(isEdit ? `/customers/${id}` : '/customers')}
+            >
+              취소
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
-

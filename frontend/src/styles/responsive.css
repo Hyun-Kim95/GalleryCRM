@@ -1,0 +1,565 @@
+/* 공통 반응형 스타일 */
+
+/* 카드 스타일 */
+.card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+  }
+}
+
+/* 테이블 반응형 스타일 */
+.table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+  background-color: white;
+}
+
+.table thead {
+  background-color: #34495e;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #ecf0f1;
+  transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 1024px) {
+  .table {
+    font-size: 0.875rem;
+    /* 모바일/작은 화면에서는 테이블이 화면 너비에 맞게 꽉 차도록 */
+    min-width: 100%;
+  }
+
+  /* 고객 목록 전용: 모바일/태블릿에서 팀, 등록일 컬럼 숨기기 */
+  .table-customers .col-team,
+  .table-customers .col-created-at {
+    display: none;
+  }
+
+  /* 거래 목록 전용: 모바일/태블릿에서 등록일 컬럼 숨기기 */
+  .table-transactions .col-created-at {
+    display: none;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .table th {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .table th,
+  .table td {
+    padding: 0.4rem 0.3rem;
+    font-size: 0.75rem;
+  }
+}
+
+/* 폼 반응형 스타일 */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+@media (max-width: 480px) {
+  .form-input,
+  .form-select,
+  .form-textarea {
+    font-size: 16px; /* iOS 줌 방지 */
+  }
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* 버튼 그룹 */
+.button-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.button:visited,
+.button:hover,
+.button:focus {
+  text-decoration: none;
+}
+
+.button-primary {
+  background-color: #667eea;
+  color: white;
+}
+
+.button-primary:hover {
+  background-color: #5568d3;
+}
+
+.button-secondary {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.button-secondary:hover {
+  background-color: #7f8c8d;
+}
+
+.button-danger {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.button-danger:hover {
+  background-color: #c0392b;
+}
+
+.button-outline {
+  background-color: transparent;
+  border: 1px solid #ddd;
+  color: #2c3e50;
+}
+
+.button-outline:hover {
+  background-color: #f5f5f5;
+}
+
+@media (max-width: 480px) {
+  .button {
+    padding: 0.7rem 1.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* 페이지 헤더 */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    margin-bottom: 1rem;
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  /* 활동 로그 테이블 (모바일):
+     - 3번째 열(작업)은 '열람요청'이 안 잘릴 정도만 확보
+     - 4번째 열(엔티티 유형)을 살짝 넓게
+     - 5번째 열(엔티티 ID)은 좁게 + ... 처리 */
+  .audit-logs-table th:nth-child(3),
+  .audit-logs-table td:nth-child(3) {
+    min-width: 96px; /* '열람요청'이 한 줄에 들어가도록 약간 여유 있게 확보 */
+  }
+
+  .audit-logs-table th:nth-child(4),
+  .audit-logs-table td:nth-child(4) {
+    min-width: 95px;
+  }
+
+  .audit-logs-table th:nth-child(5),
+  .audit-logs-table td:nth-child(5) {
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* 승인 대기 화면: 모바일에서 작업 버튼들을 더 작게, 촘촘하게 표시 */
+  .approval-actions {
+    flex-direction: row; /* 기본 column 정렬을 덮어서 가로 정렬 */
+    gap: 0.4rem;         /* 버튼 사이 간격 살짝 벌리기 */
+    flex-wrap: nowrap;
+    justify-content: center; /* 셀 안에서 가운데 정렬 */
+  }
+
+  .approval-actions .button {
+    padding: 0.22rem 0.3rem;
+    font-size: 0.7rem;
+    width: auto;   /* 버튼 폭을 내용 기준으로 */
+    min-width: 0;  /* 100% 강제 폭 제거 */
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 1.25rem;
+  }
+}
+
+/* 검색 및 필터 */
+.search-filter-container {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.filter-group {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .search-filter-container {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .filter-group select {
+    flex: 1;
+  }
+}
+
+/* 그리드 레이아웃 */
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 1280px) {
+  .grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* 태블릿/가로 모바일에서도 2열 그리드를 한 줄로 쌓아서 카드가 반만 보이지 않도록 조정 */
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 배지 및 상태 표시 */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.badge-success {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge-warning {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.badge-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.badge-info {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+/* 모달 및 오버레이 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    padding: 1rem;
+    max-height: 95vh;
+  }
+}
+
+/* 페이지네이션 */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.pagination button {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ddd;
+  background: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.pagination button:hover:not(:disabled) {
+  background-color: #f5f5f5;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination button.active {
+  background-color: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+@media (max-width: 480px) {
+  .pagination {
+    gap: 0.25rem;
+  }
+
+  .pagination button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* 유틸리티 클래스 */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mt-1 {
+  margin-top: 0.5rem;
+}
+
+.mt-2 {
+  margin-top: 1rem;
+}
+
+.mt-3 {
+  margin-top: 1.5rem;
+}
+
+.mb-1 {
+  margin-bottom: 0.5rem;
+}
+
+.mb-2 {
+  margin-bottom: 1rem;
+}
+
+.mb-3 {
+  margin-bottom: 1.5rem;
+}
+
+.hidden-mobile {
+  display: block;
+}
+
+.visible-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none;
+  }
+
+  .visible-mobile {
+    display: block;
+  }
+}
+

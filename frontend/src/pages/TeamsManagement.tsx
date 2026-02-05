@@ -1,783 +1,407 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { teamsApi, Team, TeamUser, CreateTeamPayload, UpdateTeamPayload } from '../api/teams.api';
-import { useAuthStore } from '../store/authStore';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { teamsApi, Team, CreateTeamPayload, UpdateTeamPayload } from '../api/teams.api';
 import { formatDate } from '../utils/date';
+import { getRoleLabel } from '../utils/role';
 
-export const TeamsManagement = () => {
-  const user = useAuthStore((state) => state.user);
-  const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [createForm, setCreateForm] = useState<CreateTeamPayload>({
-    name: '',
-    description: '',
-    isActive: true,
-  });
-  const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<UpdateTeamPayload>({
-    name: '',
-    description: '',
-    isActive: true,
-  });
-
+export const TeamsManagement: React.FC = () => {
   const queryClient = useQueryClient();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [expandedTeams, setExpandedTeams] = useState<Set<string>>(new Set());
+  const [formData, setFormData] = useState<CreateTeamPayload>({
+    name: '',
+    description: '',
+    isActive: true,
+  });
+  const [editFormData, setEditFormData] = useState<UpdateTeamPayload>({
+    name: undefined,
+    description: undefined,
+    isActive: undefined,
+  });
 
-  const { data: teams, isLoading, error } = useQuery({
+  const {
+    data: teams,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['teams'],
     queryFn: () => teamsApi.getAll(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (payload: CreateTeamPayload) => teamsApi.create(payload),
+    mutationFn: (data: CreateTeamPayload) => teamsApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
-      setCreateForm({ name: '', description: '', isActive: true });
-      setIsCreateOpen(false);
-      alert('팀이 생성되었습니다.');
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? '팀 생성 중 오류가 발생했습니다.';
-      alert(Array.isArray(msg) ? msg.join('\n') : msg);
+      setShowCreateModal(false);
+      setFormData({ name: '', description: '', isActive: true });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: (params: { id: string; payload: UpdateTeamPayload }) =>
-      teamsApi.update(params.id, params.payload),
+    mutationFn: ({ id, data }: { id: string; data: UpdateTeamPayload }) => teamsApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
-      setEditingTeamId(null);
-      alert('팀 정보가 수정되었습니다.');
-    },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message ?? '팀 수정 중 오류가 발생했습니다.';
-      alert(Array.isArray(msg) ? msg.join('\n') : msg);
+      setShowEditModal(false);
+      setEditingTeam(null);
+      setEditFormData({ name: undefined, description: undefined, isActive: undefined });
     },
   });
 
-  const toggleTeam = (teamId: string) => {
-    const newExpanded = new Set(expandedTeams);
-    if (newExpanded.has(teamId)) {
-      newExpanded.delete(teamId);
-    } else {
-      newExpanded.add(teamId);
-    }
-    setExpandedTeams(newExpanded);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate(formData);
   };
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'MASTER':
-        return '마스터';
-      case 'ADMIN':
-        return '관리자';
-      case 'MANAGER':
-        return '팀장';
-      case 'STAFF':
-        return '팀원';
-      default:
-        return role;
+  const handleEdit = (team: Team) => {
+    setEditingTeam(team);
+    setEditFormData({
+      name: team.name,
+      description: team.description || undefined,
+      isActive: team.isActive,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingTeam) {
+      updateMutation.mutate({ id: editingTeam.id, data: editFormData });
     }
   };
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'MASTER':
-        return '#9b59b6';
-      case 'ADMIN':
-        return '#3498db';
-      case 'MANAGER':
-        return '#f39c12';
-      case 'STAFF':
-        return '#95a5a6';
-      default:
-        return '#34495e';
+  const handleToggleActive = (team: Team) => {
+    if (window.confirm(`${team.name} 팀의 상태를 ${team.isActive ? '비활성' : '활성'}으로 변경하시겠습니까?`)) {
+      updateMutation.mutate({
+        id: team.id,
+        data: { isActive: !team.isActive },
+      });
     }
   };
 
-  const isAdminLike = user?.role === 'ADMIN' || user?.role === 'MASTER';
-
-  if (isLoading) {
-    return <div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div>;
-  }
-
-  if (error) {
-    return (
-      <div style={{ backgroundColor: '#e74c3c', color: 'white', padding: '15px', borderRadius: '4px' }}>
-        팀 정보를 불러올 수 없습니다.
-      </div>
-    );
-  }
+  const toggleTeamExpansion = (teamId: string) => {
+    setExpandedTeams((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(teamId)) {
+        newSet.delete(teamId);
+      } else {
+        newSet.add(teamId);
+      }
+      return newSet;
+    });
+  };
 
   return (
     <div>
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ margin: 0 }}>팀 관리</h1>
-        <p style={{ color: '#7f8c8d', marginTop: '4px' }}>
-          {isAdminLike
-            ? '모든 팀의 구성원을 확인하고, 팀 생성/수정이 가능합니다.'
-            : '본인 팀의 구성원을 확인할 수 있습니다.'}
-        </p>
-
-        {isAdminLike && (
-          <div style={{ marginTop: '16px' }}>
-            <button
-              onClick={() => setIsCreateOpen((prev) => !prev)}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: isCreateOpen ? '#7f8c8d' : '#2ecc71',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = isCreateOpen ? '#95a5a6' : '#27ae60';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = isCreateOpen ? '#7f8c8d' : '#2ecc71';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              {isCreateOpen ? '새 팀 생성 닫기' : '새 팀 생성'}
-            </button>
-          </div>
-        )}
+      <div className="page-header">
+        <h1 className="page-title">팀 관리</h1>
+        <button
+          className="button button-primary"
+          onClick={() => setShowCreateModal(true)}
+        >
+          등록
+        </button>
       </div>
 
-      {isAdminLike && isCreateOpen && (
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            marginBottom: '24px',
-          }}
-        >
-          <h2 style={{ marginTop: 0, marginBottom: '16px', fontSize: '18px' }}>새 팀 생성</h2>
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
-            <div style={{ flex: 1 }}>
-              <label
-                style={{
-                  display: 'block',
-                  marginBottom: '6px',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#7f8c8d',
-                }}
-              >
-                팀 이름
-              </label>
-              <input
-                type="text"
-                value={createForm.name}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  borderRadius: '4px',
-                  border: '1px solid #bdc3c7',
-                  fontSize: '14px',
-                }}
-                placeholder="예) VIP 고객 관리팀"
-              />
-            </div>
-            <div style={{ flex: 2 }}>
-              <label
-                style={{
-                  display: 'block',
-                  marginBottom: '6px',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#7f8c8d',
-                }}
-              >
-                설명
-              </label>
-              <input
-                type="text"
-                value={createForm.description ?? ''}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    description: e.target.value,
-                  }))
-                }
-                style={{
-                  width: '100%',
-                  padding: '8px 10px',
-                  borderRadius: '4px',
-                  border: '1px solid #bdc3c7',
-                  fontSize: '14px',
-                }}
-                placeholder="팀에 대한 간단한 설명을 입력하세요."
-              />
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-              <input
-                type="checkbox"
-                checked={!!createForm.isActive}
-                onChange={(e) =>
-                  setCreateForm((prev) => ({
-                    ...prev,
-                    isActive: e.target.checked,
-                  }))
-                }
-              />
-              활성 팀
-            </label>
-            <button
-              onClick={() => {
-                if (!createForm.name.trim()) {
-                  alert('팀 이름을 입력하세요.');
-                  return;
-                }
-                createMutation.mutate({
-                  name: createForm.name.trim(),
-                  description: createForm.description?.trim() || undefined,
-                  isActive: createForm.isActive,
-                });
-              }}
-              disabled={createMutation.isPending}
-              style={{
-                padding: '8px 18px',
-                backgroundColor: '#2ecc71',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: createMutation.isPending ? 'not-allowed' : 'pointer',
-                fontSize: '14px',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!createMutation.isPending) {
-                  e.currentTarget.style.backgroundColor = '#27ae60';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!createMutation.isPending) {
-                  e.currentTarget.style.backgroundColor = '#2ecc71';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }
-              }}
-            >
-              {createMutation.isPending ? '생성 중...' : '생성'}
-            </button>
+      {isLoading && (
+        <div className="card">
+          <p style={{ textAlign: 'center', padding: '2rem' }}>로딩 중...</p>
+        </div>
+      )}
+
+      {error && (
+        <div className="card">
+          <div
+            style={{
+              backgroundColor: '#fee',
+              color: '#c33',
+              padding: '1rem',
+              borderRadius: '4px',
+            }}
+          >
+            팀 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
           </div>
         </div>
       )}
 
-      {teams && teams.length === 0 ? (
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '40px',
-            borderRadius: '8px',
-            textAlign: 'center',
-            color: '#95a5a6',
-          }}
-        >
-          팀 데이터가 없습니다.
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          {teams?.map((team) => {
-            const isExpanded = expandedTeams.has(team.id);
-            const managers = team.users?.filter((u) => u.role === 'MANAGER') || [];
-            const staff = team.users?.filter((u) => u.role === 'STAFF') || [];
-            const admins = team.users?.filter((u) => u.role === 'ADMIN' || u.role === 'MASTER') || [];
-
-            const isEditing = editingTeamId === team.id;
-
-            return (
-              <div
-                key={team.id}
-                style={{
-                  backgroundColor: 'white',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* 팀 헤더 */}
-                <div
-                  style={{
-                    padding: '20px',
-                    borderBottom: isExpanded ? '1px solid #ecf0f1' : 'none',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                  onClick={() => toggleTeam(team.id)}
-                >
-                  <div style={{ flex: 1 }}>
-                    <h2 style={{ margin: 0, fontSize: '20px', color: '#2c3e50' }}>{team.name}</h2>
-                    {team.description && (
-                      <p style={{ margin: '8px 0 0 0', color: '#7f8c8d', fontSize: '14px' }}>
-                        {team.description}
-                      </p>
-                    )}
-                    <div style={{ marginTop: '8px', fontSize: '12px', color: '#95a5a6' }}>
-                      총 {team.users?.length || 0}명
-                      {managers.length > 0 && ` · 팀장 ${managers.length}명`}
-                      {staff.length > 0 && ` · 팀원 ${staff.length}명`}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {isAdminLike && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingTeamId(isEditing ? null : team.id);
-                          setEditForm({
-                            name: team.name,
-                            description: team.description ?? '',
-                            isActive: team.isActive,
-                          });
-                        }}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#3498db',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#2980b9';
-                          e.currentTarget.style.transform = 'translateY(-1px)';
-                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = '#3498db';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-                        }}
-                      >
-                        {isEditing ? '편집 취소' : '팀 정보 편집'}
-                      </button>
-                    )}
-                    <div style={{ fontSize: '24px', color: '#95a5a6' }}>
-                      {isExpanded ? '▼' : '▶'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 팀 정보 편집 영역 */}
-                {isAdminLike && isEditing && (
-                  <div
-                    style={{
-                      padding: '16px 20px 4px 20px',
-                      borderTop: '1px solid #ecf0f1',
-                      backgroundColor: '#fdfefe',
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label
-                          style={{
-                            display: 'block',
-                            marginBottom: '6px',
-                            fontSize: '13px',
-                            fontWeight: 'bold',
-                            color: '#7f8c8d',
-                          }}
-                        >
-                          팀 이름
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.name ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              name: e.target.value,
-                            }))
-                          }
-                          style={{
-                            width: '100%',
-                            padding: '8px 10px',
-                            borderRadius: '4px',
-                            border: '1px solid #bdc3c7',
-                            fontSize: '14px',
-                          }}
-                        />
-                      </div>
-                      <div style={{ flex: 2 }}>
-                        <label
-                          style={{
-                            display: 'block',
-                            marginBottom: '6px',
-                            fontSize: '13px',
-                            fontWeight: 'bold',
-                            color: '#7f8c8d',
-                          }}
-                        >
-                          설명
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.description ?? ''}
-                          onChange={(e) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              description: e.target.value,
-                            }))
-                          }
-                          style={{
-                            width: '100%',
-                            padding: '8px 10px',
-                            borderRadius: '4px',
-                            border: '1px solid #bdc3c7',
-                            fontSize: '14px',
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div
+      {teams && (
+        <div className="card">
+          <div className="table-container">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: '40px' }}></th>
+                  <th>팀 이름</th>
+                  <th>설명</th>
+                  <th>상태</th>
+                  <th>구성원 수</th>
+                  <th>생성일</th>
+                  <th>작업</th>
+                </tr>
+              </thead>
+              <tbody>
+                {teams.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '8px',
+                        textAlign: 'center',
+                        padding: '2rem',
+                        color: '#95a5a6',
                       }}
                     >
-                      <label
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={!!editForm.isActive}
-                          onChange={(e) =>
-                            setEditForm((prev) => ({
-                              ...prev,
-                              isActive: e.target.checked,
-                            }))
-                          }
-                        />
-                        활성 팀
-                      </label>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button
-                          onClick={() => setEditingTeamId(null)}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#bdc3c7',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#95a5a6';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#bdc3c7';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        >
-                          취소
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (!editForm.name?.trim()) {
-                              alert('팀 이름을 입력하세요.');
-                              return;
-                            }
-                            updateMutation.mutate({
-                              id: team.id,
-                              payload: {
-                                name: editForm.name.trim(),
-                                description: editForm.description?.trim() || undefined,
-                                isActive: editForm.isActive,
-                              },
-                            });
-                          }}
-                          disabled={updateMutation.isPending}
-                          style={{
-                            padding: '6px 12px',
-                            backgroundColor: '#3498db',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '12px',
-                            cursor: updateMutation.isPending ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!updateMutation.isPending) {
-                              e.currentTarget.style.backgroundColor = '#2980b9';
-                              e.currentTarget.style.transform = 'translateY(-1px)';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!updateMutation.isPending) {
-                              e.currentTarget.style.backgroundColor = '#3498db';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = 'none';
-                            }
-                          }}
-                        >
-                          {updateMutation.isPending ? '저장 중...' : '저장'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                      팀 데이터가 없습니다.
+                    </td>
+                  </tr>
+                ) : (
+                  teams.map((team: Team) => {
+                    const isExpanded = expandedTeams.has(team.id);
+                    const memberCount = team.users?.length ?? 0;
+                    return (
+                      <React.Fragment key={team.id}>
+                        <tr style={{ backgroundColor: isExpanded ? '#f8f9fa' : 'transparent' }}>
+                          <td>
+                            {memberCount > 0 && (
+                              <button
+                                onClick={() => toggleTeamExpansion(team.id)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  cursor: 'pointer',
+                                  fontSize: '1rem',
+                                  padding: '0.25rem',
+                                  color: '#3498db',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                }}
+                                title={isExpanded ? '접기' : '펼치기'}
+                              >
+                                {isExpanded ? '▼' : '▶'}
+                              </button>
+                            )}
+                          </td>
+                          <td>
+                            <strong>{team.name}</strong>
+                          </td>
+                          <td>{team.description || '-'}</td>
+                          <td>
+                            <span
+                              className={
+                                team.isActive ? 'badge badge-success' : 'badge badge-danger'
+                              }
+                            >
+                              {team.isActive ? '활성' : '비활성'}
+                            </span>
+                          </td>
+                          <td>{memberCount}명</td>
+                          <td>{formatDate(team.createdAt)}</td>
+                          <td>
+                            <div className="button-group">
+                              <button
+                                className="button button-outline"
+                                onClick={() => handleEdit(team)}
+                                style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
+                              >
+                                수정
+                              </button>
+                              <button
+                                className={`button ${team.isActive ? 'button-secondary' : 'button-primary'}`}
+                                onClick={() => handleToggleActive(team)}
+                                disabled={updateMutation.isPending}
+                                style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
+                              >
+                                {team.isActive ? '비활성' : '활성'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {isExpanded && team.users && team.users.length > 0 && (
+                          <>
+                            {team.users.map((user, index) => (
+                              <tr
+                                key={user.id}
+                                style={{
+                                  backgroundColor: '#f8f9fa',
+                                  borderLeft: '3px solid #3498db',
+                                }}
+                              >
+                                <td></td>
+                                <td colSpan={6} style={{ paddingLeft: '1.5rem' }}>
+                                  <div
+                                    style={{
+                                      display: 'grid',
+                                      gridTemplateColumns: '16px minmax(0, 1.2fr) minmax(0, 1.8fr) auto',
+                                      alignItems: 'center',
+                                      columnGap: '0.75rem',
+                                      minWidth: 0,
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        width: '8px',
+                                        height: '8px',
+                                        borderRadius: '50%',
+                                        backgroundColor: user.isActive ? '#27ae60' : '#e74c3c',
+                                      }}
+                                    ></span>
+                                    <div
+                                      style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr auto',
+                                        alignItems: 'center',
+                                        columnGap: '0.4rem',
+                                        minWidth: 0,
+                                      }}
+                                    >
+                                      <strong
+                                        style={{
+                                          whiteSpace: 'nowrap',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                        }}
+                                      >
+                                        {user.name || user.email}
+                                      </strong>
+                                      <span
+                                        className="badge badge-info"
+                                        style={{ fontSize: '0.75rem', justifySelf: 'flex-start' }}
+                                      >
+                                        {getRoleLabel(user.role)}
+                                      </span>
+                                    </div>
+                                    <span
+                                      style={{
+                                        color: '#7f8c8d',
+                                        fontSize: '0.875rem',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        minWidth: 0,
+                                      }}
+                                    >
+                                      {user.email}
+                                    </span>
+                                    {!user.isActive && (
+                                      <span
+                                        className="badge badge-danger"
+                                        style={{ fontSize: '0.75rem', justifySelf: 'flex-end' }}
+                                      >
+                                        비활성
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
-                {/* 팀원 목록 (트리 구조) */}
-                {isExpanded && (
-                  <div style={{ padding: '20px', backgroundColor: '#f8f9fa' }}>
-                    {/* 관리자/마스터 */}
-                    {admins.length > 0 && (
-                      <div style={{ marginBottom: '20px' }}>
-                        <div
-                          style={{
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            color: '#7f8c8d',
-                            marginBottom: '10px',
-                            paddingBottom: '8px',
-                            borderBottom: '1px solid #ecf0f1',
-                          }}
-                        >
-                          관리자
-                        </div>
-                        {admins.map((admin) => (
-                          <div
-                            key={admin.id}
-                            style={{
-                              padding: '12px',
-                              marginLeft: '20px',
-                              marginBottom: '8px',
-                              backgroundColor: 'white',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span
-                                  style={{
-                                    padding: '4px 10px',
-                                    borderRadius: '12px',
-                                    fontSize: '12px',
-                                    fontWeight: 'bold',
-                                    backgroundColor: getRoleColor(admin.role),
-                                    color: 'white',
-                                  }}
-                                >
-                                  {getRoleLabel(admin.role)}
-                                </span>
-                                <span style={{ fontWeight: 'bold' }}>{admin.name}</span>
-                                {!admin.isActive && (
-                                  <span
-                                    style={{
-                                      fontSize: '12px',
-                                      color: '#e74c3c',
-                                      padding: '2px 8px',
-                                      backgroundColor: '#ffeaa7',
-                                      borderRadius: '3px',
-                                    }}
-                                  >
-                                    비활성화
-                                  </span>
-                                )}
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#95a5a6', marginTop: '4px' }}>
-                                {admin.email}
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#95a5a6' }}>
-                              {formatDate(admin.createdAt)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* 팀장 */}
-                    {managers.length > 0 && (
-                      <div style={{ marginBottom: '20px' }}>
-                        <div
-                          style={{
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            color: '#7f8c8d',
-                            marginBottom: '10px',
-                            paddingBottom: '8px',
-                            borderBottom: '1px solid #ecf0f1',
-                          }}
-                        >
-                          팀장
-                        </div>
-                        {managers.map((manager) => (
-                          <div
-                            key={manager.id}
-                            style={{
-                              padding: '12px',
-                              marginLeft: '20px',
-                              marginBottom: '8px',
-                              backgroundColor: 'white',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span
-                                  style={{
-                                    padding: '4px 10px',
-                                    borderRadius: '12px',
-                                    fontSize: '12px',
-                                    fontWeight: 'bold',
-                                    backgroundColor: getRoleColor(manager.role),
-                                    color: 'white',
-                                  }}
-                                >
-                                  {getRoleLabel(manager.role)}
-                                </span>
-                                <span style={{ fontWeight: 'bold' }}>{manager.name}</span>
-                                {!manager.isActive && (
-                                  <span
-                                    style={{
-                                      fontSize: '12px',
-                                      color: '#e74c3c',
-                                      padding: '2px 8px',
-                                      backgroundColor: '#ffeaa7',
-                                      borderRadius: '3px',
-                                    }}
-                                  >
-                                    비활성화
-                                  </span>
-                                )}
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#95a5a6', marginTop: '4px' }}>
-                                {manager.email}
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#95a5a6' }}>
-                              {formatDate(manager.createdAt)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* 팀원 */}
-                    {staff.length > 0 && (
-                      <div>
-                        <div
-                          style={{
-                            fontSize: '14px',
-                            fontWeight: 'bold',
-                            color: '#7f8c8d',
-                            marginBottom: '10px',
-                            paddingBottom: '8px',
-                            borderBottom: '1px solid #ecf0f1',
-                          }}
-                        >
-                          팀원
-                        </div>
-                        {staff.map((member) => (
-                          <div
-                            key={member.id}
-                            style={{
-                              padding: '12px',
-                              marginLeft: '20px',
-                              marginBottom: '8px',
-                              backgroundColor: 'white',
-                              borderRadius: '4px',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <span
-                                  style={{
-                                    padding: '4px 10px',
-                                    borderRadius: '12px',
-                                    fontSize: '12px',
-                                    fontWeight: 'bold',
-                                    backgroundColor: getRoleColor(member.role),
-                                    color: 'white',
-                                  }}
-                                >
-                                  {getRoleLabel(member.role)}
-                                </span>
-                                <span style={{ fontWeight: 'bold' }}>{member.name}</span>
-                                {!member.isActive && (
-                                  <span
-                                    style={{
-                                      fontSize: '12px',
-                                      color: '#e74c3c',
-                                      padding: '2px 8px',
-                                      backgroundColor: '#ffeaa7',
-                                      borderRadius: '3px',
-                                    }}
-                                  >
-                                    비활성화
-                                  </span>
-                                )}
-                              </div>
-                              <div style={{ fontSize: '12px', color: '#95a5a6', marginTop: '4px' }}>
-                                {member.email}
-                              </div>
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#95a5a6' }}>
-                              {formatDate(member.createdAt)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {(!admins.length && !managers.length && !staff.length) && (
-                      <div style={{ textAlign: 'center', padding: '20px', color: '#95a5a6' }}>
-                        팀원이 없습니다.
-                      </div>
-                    )}
-                  </div>
-                )}
+      {/* 팀 등록 모달 */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0 }}>등록</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">
+                  팀 이름 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={formData.name}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  required
+                />
               </div>
-            );
-          })}
+              <div className="form-group">
+                <label className="form-label">설명</label>
+                <textarea
+                  className="form-textarea"
+                  value={formData.description}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+              <div className="button-group" style={{ marginTop: '1.5rem' }}>
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending ? '등록 중...' : '등록'}
+                </button>
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 팀 수정 모달 */}
+      {showEditModal && editingTeam && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0 }}>팀 수정</h2>
+            <form onSubmit={handleEditSubmit}>
+              <div className="form-group">
+                <label className="form-label">
+                  팀 이름 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={editFormData.name || ''}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">설명</label>
+                <textarea
+                  className="form-textarea"
+                  value={editFormData.description || ''}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+              <div className="button-group" style={{ marginTop: '1.5rem' }}>
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={updateMutation.isPending}
+                >
+                  {updateMutation.isPending ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
   );
 };
-

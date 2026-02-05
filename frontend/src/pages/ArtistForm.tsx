@@ -1,305 +1,138 @@
-import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { artistsApi, CreateArtistDto, UpdateArtistDto } from '../api/artists.api';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { artistsApi, CreateArtistDto, UpdateArtistDto, ArtistStatus } from '../api/artists.api';
 
-export const ArtistForm = () => {
+export const ArtistForm: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const isEdit = !!id;
 
-  const [name, setName] = useState('');
-  const [nationality, setNationality] = useState('');
-  const [genre, setGenre] = useState('');
-  const [bio, setBio] = useState('');
-  const [isActive, setIsActive] = useState(true);
+  const [formData, setFormData] = useState<CreateArtistDto>({
+    name: '',
+    nationality: '',
+    genre: '',
+    bio: '',
+  });
 
-  // 작가 상세 조회 (수정 모드일 때)
-  const { data: artist, isLoading: isLoadingArtist } = useQuery({
+  const { data: artist } = useQuery({
     queryKey: ['artist', id],
     queryFn: () => artistsApi.getById(id!),
     enabled: isEdit && !!id,
   });
 
-  // 수정 모드일 때 폼 데이터 채우기
   useEffect(() => {
     if (artist && isEdit) {
-      setName(artist.name);
-      setNationality(artist.nationality || '');
-      setGenre(artist.genre || '');
-      setBio(artist.bio || '');
-      setIsActive(artist.isActive);
+      setFormData({
+        name: artist.name || '',
+        nationality: artist.nationality || '',
+        genre: artist.genre || '',
+        bio: artist.bio || '',
+      });
     }
   }, [artist, isEdit]);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateArtistDto) => artistsApi.create(data),
-    onSuccess: (artist) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['artists'] });
-      navigate(`/artists/${artist.id}`);
-    },
-    onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message ?? '작가 생성 중 오류가 발생했습니다.';
-      alert(Array.isArray(msg) ? msg.join('\n') : msg);
+      navigate('/artists');
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateArtistDto) => artistsApi.update(id!, data),
-    onSuccess: (artist) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['artists'] });
       queryClient.invalidateQueries({ queryKey: ['artist', id] });
-      navigate(`/artists/${artist.id}`);
-    },
-    onError: (error: any) => {
-      const msg =
-        error?.response?.data?.message ?? '작가 수정 중 오류가 발생했습니다.';
-      alert(Array.isArray(msg) ? msg.join('\n') : msg);
+      navigate(`/artists/${id}`);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!name.trim()) {
-      alert('작가 이름을 입력해주세요.');
-      return;
-    }
-
-    const payload: CreateArtistDto | UpdateArtistDto = {
-      name: name.trim(),
-      nationality: nationality.trim() || undefined,
-      genre: genre.trim() || undefined,
-      bio: bio.trim() || undefined,
-      isActive,
-    };
-
     if (isEdit) {
-      updateMutation.mutate(payload);
+      updateMutation.mutate(formData);
     } else {
-      createMutation.mutate(payload as CreateArtistDto);
+      createMutation.mutate(formData);
     }
   };
 
-  if (isLoadingArtist) {
-    return <div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div>;
-  }
-
-  const isLoading = createMutation.isPending || updateMutation.isPending;
-
   return (
     <div>
-      <div style={{ marginBottom: '30px' }}>
-        <Link
-          to={isEdit ? `/artists/${id}` : '/artists'}
-          style={{ color: '#3498db', textDecoration: 'none' }}
-        >
-          ← {isEdit ? '상세로 돌아가기' : '목록으로 돌아가기'}
-        </Link>
-        <h1 style={{ margin: '10px 0 0 0' }}>{isEdit ? '작가 수정' : '새 작가 등록'}</h1>
+      <div className="page-header">
+        <h1 className="page-title">{isEdit ? '작가 수정' : '등록'}</h1>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          backgroundColor: 'white',
-          padding: '30px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-        }}
-      >
-        <div style={{ display: 'grid', gap: '20px' }}>
-          <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '5px',
-                fontWeight: 'bold',
-              }}
-            >
+      <div className="card">
+        <form onSubmit={handleSubmit} className="form-container">
+          <div className="form-group">
+            <label htmlFor="name" className="form-label">
               이름 <span style={{ color: '#e74c3c' }}>*</span>
             </label>
             <input
+              id="name"
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-              }}
+              className="form-input"
+              value={formData.name}
+              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              required
             />
           </div>
 
-          <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '5px',
-                fontWeight: 'bold',
-              }}
-            >
-              국적
-            </label>
-            <input
-              type="text"
-              value={nationality}
-              onChange={(e) => setNationality(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '5px',
-                fontWeight: 'bold',
-              }}
-            >
-              장르
-            </label>
-            <input
-              type="text"
-              value={genre}
-              onChange={(e) => setGenre(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '5px',
-                fontWeight: 'bold',
-              }}
-            >
-              소개
-            </label>
-            <textarea
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={5}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ddd',
-                borderRadius: '4px',
-                fontSize: '16px',
-                fontFamily: 'inherit',
-              }}
-              placeholder="작가 소개를 입력하세요 (선택)"
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: 'block',
-                marginBottom: '5px',
-                fontWeight: 'bold',
-              }}
-            >
-              상태
-            </label>
-            <label style={{ fontSize: '14px' }}>
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="nationality" className="form-label">국적</label>
               <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-                style={{ marginRight: '8px' }}
+                id="nationality"
+                type="text"
+                className="form-input"
+                value={formData.nationality}
+                onChange={(e) => setFormData((prev) => ({ ...prev, nationality: e.target.value }))}
               />
-              활성
-            </label>
+            </div>
+            <div className="form-group">
+              <label htmlFor="genre" className="form-label">장르</label>
+              <input
+                id="genre"
+                type="text"
+                className="form-input"
+                value={formData.genre}
+                onChange={(e) => setFormData((prev) => ({ ...prev, genre: e.target.value }))}
+              />
+            </div>
           </div>
-        </div>
 
-        <div
-          style={{
-            marginTop: '30px',
-            display: 'flex',
-            gap: '10px',
-            justifyContent: 'flex-end',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => navigate(isEdit ? `/artists/${id}` : '/artists')}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#95a5a6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#7f8c8d';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#95a5a6';
-              e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-            }}
-          >
-            취소
-          </button>
-          <button
-            type="submit"
-            disabled={isLoading}
-            style={{
-              padding: '10px 20px',
-              backgroundColor: '#3498db',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              opacity: isLoading ? 0.7 : 1,
-            transition: 'all 0.2s ease',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.backgroundColor = '#2980b9';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isLoading) {
-                e.currentTarget.style.backgroundColor = '#3498db';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-              }
-            }}
-          >
-            {isLoading ? (isEdit ? '수정 중...' : '생성 중...') : (isEdit ? '수정' : '생성')}
-          </button>
-        </div>
-      </form>
+          <div className="form-group">
+            <label htmlFor="bio" className="form-label">소개</label>
+            <textarea
+              id="bio"
+              className="form-textarea"
+              value={formData.bio}
+              onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
+              rows={5}
+            />
+          </div>
+
+          <div className="button-group" style={{ marginTop: '1.5rem' }}>
+            <button
+              type="submit"
+              className="button button-primary"
+              disabled={createMutation.isPending || updateMutation.isPending}
+            >
+              {createMutation.isPending || updateMutation.isPending ? '저장 중...' : '저장'}
+            </button>
+            <button
+              type="button"
+              className="button button-outline"
+              onClick={() => navigate(isEdit ? `/artists/${id}` : '/artists')}
+            >
+              취소
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
-
-
