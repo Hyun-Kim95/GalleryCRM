@@ -1,637 +1,594 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  adminUsersApi,
-  AdminUser,
-  CreateAdminUserDto,
-  UpdateAdminUserDto,
-} from '../api/admin-users.api';
+import { adminUsersApi, AdminUser, CreateAdminUserDto, UpdateAdminUserDto } from '../api/admin-users.api';
+import { getRoleLabel } from '../utils/role';
+import { formatDate } from '../utils/date';
 import { teamsApi } from '../api/teams.api';
 import { useAuthStore } from '../store/authStore';
-import { getRoleLabel } from '../utils/role';
 
-type Mode = 'list' | 'create' | 'edit';
-
-export const AdminUsers = () => {
+export const AdminUsers: React.FC = () => {
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<Mode>('list');
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const currentUser = useAuthStore((state) => state.user);
+  const isManager = currentUser?.role === 'MANAGER';
+  const isAdmin = currentUser?.role === 'MASTER' || currentUser?.role === 'ADMIN';
+  const isStaff = currentUser?.role === 'STAFF';
+  
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordUser, setPasswordUser] = useState<AdminUser | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [formData, setFormData] = useState<CreateAdminUserDto>({
+    email: '',
+    name: '',
+    role: 'STAFF',
+    initialPassword: '',
+    teamId: isManager ? currentUser?.teamId || undefined : undefined,
+  });
+  const [editFormData, setEditFormData] = useState<UpdateAdminUserDto>({
+    role: undefined,
+    teamId: undefined,
+    isActive: undefined,
+  });
 
-  const { data: users, isLoading, error } = useQuery({
+  const {
+    data: users,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => adminUsersApi.getAll(),
   });
+
+  // 권한에 따라 필터링
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    // 사원은 본인 계정만
+    if (isStaff && currentUser?.id) {
+      return users.filter((user: AdminUser) => user.id === currentUser.id);
+    }
+    // 팀장은 본인 팀원만
+    if (isManager && currentUser?.teamId) {
+      return users.filter((user: AdminUser) => user.teamId === currentUser.teamId);
+    }
+    // 관리자는 전체
+    return users;
+  }, [users, isManager, isStaff, currentUser?.teamId, currentUser?.id]);
 
   const { data: teams } = useQuery({
     queryKey: ['teams'],
     queryFn: () => teamsApi.getAll(),
   });
 
+  // 팀장인 경우 본인 팀만 선택 가능
+  const availableTeams = useMemo(() => {
+    if (!teams) return [];
+    if (isManager && currentUser?.teamId) {
+      return teams.filter((team) => team.id === currentUser.teamId);
+    }
+    return teams;
+  }, [teams, isManager, currentUser?.teamId]);
+
   const createMutation = useMutation({
     mutationFn: (data: CreateAdminUserDto) => adminUsersApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      alert('사용자가 생성되었습니다.');
-      setMode('list');
-    },
-    onError: (error: any) => {
-      const message = error?.response?.data?.message || error?.message || '사용자 생성 중 오류가 발생했습니다.';
-      alert(Array.isArray(message) ? message.join('\n') : message);
-      console.error('사용자 생성 에러:', error);
+      setShowCreateModal(false);
+      setFormData({ 
+        email: '', 
+        name: '', 
+        role: 'STAFF', 
+        initialPassword: '',
+        teamId: isManager ? currentUser?.teamId || undefined : undefined,
+      });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateAdminUserDto }) =>
-      adminUsersApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateAdminUserDto }) => adminUsersApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      alert('사용자 정보가 수정되었습니다.');
-      setMode('list');
-      setSelectedUser(null);
+      setShowEditModal(false);
+      setEditingUser(null);
+      setEditFormData({ role: undefined, teamId: undefined, isActive: undefined });
     },
   });
 
   const resetPasswordMutation = useMutation({
-    mutationFn: ({ id, newPassword }: { id: string; newPassword: string }) =>
-      adminUsersApi.resetPassword(id, { newPassword }),
+    mutationFn: ({ id, password }: { id: string; password: string }) => adminUsersApi.resetPassword(id, { newPassword: password }),
     onSuccess: () => {
-      alert('비밀번호가 초기화되었습니다.');
+      setShowPasswordModal(false);
+      setPasswordUser(null);
+      setNewPassword('');
+      alert('비밀번호가 재설정되었습니다.');
     },
   });
 
-  const [createForm, setCreateForm] = useState<CreateAdminUserDto>({
-    email: '',
-    name: '',
-    role: 'STAFF',
-    teamId: undefined,
-    initialPassword: '',
-  });
-
-  const [editForm, setEditForm] = useState<UpdateAdminUserDto>({
-    role: undefined,
-    teamId: undefined,
-    isActive: undefined,
-  });
-
-  const openCreate = () => {
-    setCreateForm({
-      email: '',
-      name: '',
-      role: 'STAFF',
-      // 팀장인 경우 자동으로 본인 팀 선택
-      teamId: currentUser?.role === 'MANAGER' ? currentUser.teamId || undefined : undefined,
-      initialPassword: '',
-    });
-    setMode('create');
-    setSelectedUser(null);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    createMutation.mutate(formData);
   };
 
-  const renderCreate = () => (
-    <div>
-      <h1 style={{ marginBottom: '20px' }}>사용자 생성</h1>
-      <div
-        style={{
-          backgroundColor: 'white',
-          padding: '24px',
-          borderRadius: '8px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          maxWidth: '600px',
-        }}
-      >
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>이메일</label>
-          <input
-            type="email"
-            value={createForm.email}
-            onChange={(e) => setCreateForm((p) => ({ ...p, email: e.target.value }))}
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>이름</label>
-          <input
-            type="text"
-            value={createForm.name}
-            onChange={(e) => setCreateForm((p) => ({ ...p, name: e.target.value }))}
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>역할</label>
-          <select
-            value={createForm.role}
-            onChange={(e) => setCreateForm((p) => ({ ...p, role: e.target.value }))}
-            style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-          >
-            <option value="ADMIN">관리자</option>
-            <option value="MANAGER">팀장</option>
-            <option value="STAFF">사원</option>
-          </select>
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>팀</label>
-          <select
-            value={createForm.teamId || ''}
-            onChange={(e) =>
-              setCreateForm((p) => ({ ...p, teamId: e.target.value || undefined }))
-            }
-            style={{
-              width: '100%',
-              padding: '8px',
-              borderRadius: '4px',
-              border: '1px solid #ddd',
-            }}
-            disabled={currentUser?.role === 'MANAGER'}
-          >
-            <option value="">선택 안 함</option>
-            {teams
-              ?.filter((t) =>
-                currentUser?.role === 'MANAGER' && currentUser.teamId
-                  ? t.id === currentUser.teamId
-                  : true,
-              )
-              .map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-          </select>
-          {currentUser?.role === 'MANAGER' && (
-            <div style={{ fontSize: '12px', color: '#7f8c8d', marginTop: '4px' }}>
-              팀장은 본인 소속 팀으로만 사원을 등록할 수 있습니다.
-            </div>
-          )}
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-            초기 비밀번호 <span style={{ color: '#e74c3c' }}>*</span>
-          </label>
-          <input
-            type="password"
-            value={createForm.initialPassword}
-            onChange={(e) =>
-              setCreateForm((p) => ({ ...p, initialPassword: e.target.value }))
-            }
-            minLength={6}
-            placeholder="최소 6자 이상 입력하세요"
-            style={{
-              width: '100%',
-              padding: '8px',
-              borderRadius: '4px',
-              border: '1px solid #ddd',
-            }}
-          />
-          {createForm.initialPassword && createForm.initialPassword.length < 6 && (
-            <div style={{ color: '#e74c3c', fontSize: '12px', marginTop: '4px' }}>
-              비밀번호는 최소 6자 이상이어야 합니다.
-            </div>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-          <button
-            type="button"
-            onClick={() => {
-              setMode('list');
-              setSelectedUser(null);
-            }}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#95a5a6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#7f8c8d';
-              e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#95a5a6';
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            취소
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              // 유효성 검사
-              if (!createForm.email) {
-                alert('이메일을 입력해주세요.');
-                return;
-              }
-              if (!createForm.name) {
-                alert('이름을 입력해주세요.');
-                return;
-              }
-              if (!createForm.initialPassword) {
-                alert('초기 비밀번호를 입력해주세요.');
-                return;
-              }
-              if (createForm.initialPassword.length < 6) {
-                alert('비밀번호는 최소 6자 이상이어야 합니다.');
-                return;
-              }
-
-              const payload = { ...createForm };
-              // teamId가 undefined이면 제거
-              if (!payload.teamId) {
-                delete payload.teamId;
-              }
-              console.log('사용자 생성 요청 데이터:', payload);
-              createMutation.mutate(payload);
-            }}
-            disabled={createMutation.isPending}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#3498db',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: createMutation.isPending ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              if (!createMutation.isPending) {
-                e.currentTarget.style.backgroundColor = '#2980b9';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!createMutation.isPending) {
-                e.currentTarget.style.backgroundColor = '#3498db';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }
-            }}
-          >
-            {createMutation.isPending ? '생성 중...' : '생성'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderEdit = () => {
-    if (!selectedUser) return null;
-    const isEditingSelf = currentUser?.id === selectedUser.id && currentUser?.role === 'ADMIN';
-    return (
-      <div>
-        <h1 style={{ marginBottom: '20px' }}>사용자 수정</h1>
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            maxWidth: '600px',
-          }}
-        >
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>이메일</label>
-            <div>{selectedUser.email}</div>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>이름</label>
-            <div>{selectedUser.name}</div>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>역할</label>
-            <select
-              value={editForm.role || ''}
-              onChange={(e) =>
-                setEditForm((p) => ({
-                  ...p,
-                  role: e.target.value || undefined,
-                }))
-              }
-              disabled={isEditingSelf}
-              style={{ 
-                width: '100%', 
-                padding: '8px', 
-                borderRadius: '4px', 
-                border: '1px solid #ddd',
-                backgroundColor: isEditingSelf ? '#f5f5f5' : 'white',
-                cursor: isEditingSelf ? 'not-allowed' : 'pointer',
-              }}
-            >
-              <option value="">변경 안 함</option>
-              <option value="ADMIN">관리자</option>
-              <option value="MANAGER">팀장</option>
-              <option value="STAFF">사원</option>
-            </select>
-            {isEditingSelf && (
-              <div style={{ fontSize: '12px', color: '#7f8c8d', marginTop: '4px' }}>
-                본인의 역할은 변경할 수 없습니다.
-              </div>
-            )}
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>팀</label>
-            <select
-              value={editForm.teamId || ''}
-              onChange={(e) =>
-                setEditForm((p) => ({
-                  ...p,
-                  teamId: e.target.value || undefined,
-                }))
-              }
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
-            >
-              <option value="">변경 안 함</option>
-              {teams?.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>상태</label>
-            <select
-              value={editForm.isActive === undefined ? '' : editForm.isActive ? '1' : '0'}
-              onChange={(e) =>
-                setEditForm((p) => ({
-                  ...p,
-                  isActive: e.target.value === '' ? undefined : e.target.value === '1',
-                }))
-              }
-              disabled={isEditingSelf}
-              style={{ 
-                width: '100%', 
-                padding: '8px', 
-                borderRadius: '4px', 
-                border: '1px solid #ddd',
-                backgroundColor: isEditingSelf ? '#f5f5f5' : 'white',
-                cursor: isEditingSelf ? 'not-allowed' : 'pointer',
-              }}
-            >
-              <option value="">변경 안 함</option>
-              <option value="1">활성</option>
-              <option value="0">비활성</option>
-            </select>
-            {isEditingSelf && (
-              <div style={{ fontSize: '12px', color: '#7f8c8d', marginTop: '4px' }}>
-                본인의 활성화 상태는 변경할 수 없습니다.
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('list');
-                setSelectedUser(null);
-              }}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#95a5a6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#7f8c8d';
-                e.currentTarget.style.transform = 'translateY(-1px)';
-                e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#95a5a6';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'none';
-              }}
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                updateMutation.mutate({
-                  id: selectedUser.id,
-                  data: editForm,
-                })
-              }
-              disabled={updateMutation.isPending}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: '#3498db',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: updateMutation.isPending ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onMouseEnter={(e) => {
-                if (!updateMutation.isPending) {
-                  e.currentTarget.style.backgroundColor = '#2980b9';
-                  e.currentTarget.style.transform = 'translateY(-1px)';
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!updateMutation.isPending) {
-                  e.currentTarget.style.backgroundColor = '#3498db';
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }
-              }}
-            >
-              {updateMutation.isPending ? '저장 중...' : '저장'}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const openEdit = (user: AdminUser) => {
-    setSelectedUser(user);
-    setEditForm({
+  const handleEdit = (user: AdminUser) => {
+    setEditingUser(user);
+    setEditFormData({
       role: user.role,
       teamId: user.teamId || undefined,
       isActive: user.isActive,
     });
-    setMode('edit');
+    setShowEditModal(true);
   };
 
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingUser) {
+      updateMutation.mutate({ id: editingUser.id, data: editFormData });
+    }
+  };
 
-  const renderList = () => (
+  const handlePasswordReset = (user: AdminUser) => {
+    setPasswordUser(user);
+    setNewPassword('');
+    setShowPasswordModal(true);
+  };
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordUser && newPassword) {
+      resetPasswordMutation.mutate({ id: passwordUser.id, password: newPassword });
+    }
+  };
+
+  const handleToggleActive = (user: AdminUser) => {
+    // 본인 계정은 활성/비활성 변경 불가
+    if (user.id === currentUser?.id) {
+      alert('본인 계정의 활성 상태는 변경할 수 없습니다.');
+      return;
+    }
+    if (window.confirm(`${user.name} 사용자의 상태를 ${user.isActive ? '비활성' : '활성'}으로 변경하시겠습니까?`)) {
+      updateMutation.mutate({
+        id: user.id,
+        data: { isActive: !user.isActive },
+      });
+    }
+  };
+
+  const isEditingSelf = editingUser?.id === currentUser?.id;
+
+  return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h1 style={{ margin: 0 }}>사용자 관리</h1>
-        <button
-          onClick={openCreate}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: '#3498db',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#2980b9';
-            e.currentTarget.style.transform = 'translateY(-1px)';
-            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#3498db';
-            e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = 'none';
-          }}
-        >
-          + 사용자 생성
-        </button>
+      <div className="page-header">
+        <h1 className="page-title">사용자 관리</h1>
+        {(isAdmin || isManager) && (
+          <button
+            className="button button-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            등록
+          </button>
+        )}
       </div>
 
-      {isLoading && <div style={{ padding: '40px', textAlign: 'center' }}>로딩 중...</div>}
+      {isStaff && (
+        <div className="card" style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#e8f4f8', borderRadius: '4px', fontSize: '0.875rem' }}>
+          본인 계정 정보만 표시됩니다. 비밀번호를 변경할 수 있습니다.
+        </div>
+      )}
+
+      {isLoading && (
+        <div className="card">
+          <p style={{ textAlign: 'center', padding: '2rem' }}>로딩 중...</p>
+        </div>
+      )}
+
       {error && (
-        <div
-          style={{
-            padding: '15px',
-            marginBottom: '20px',
-            borderRadius: '4px',
-            backgroundColor: '#e74c3c',
-            color: 'white',
-          }}
-        >
-          사용자 목록을 불러오는 중 오류가 발생했습니다.
-          <div style={{ marginTop: '10px', fontSize: '12px' }}>
-            {error instanceof Error ? error.message : String(error)}
+        <div className="card">
+          <div
+            style={{
+              backgroundColor: '#fee',
+              color: '#c33',
+              padding: '1rem',
+              borderRadius: '4px',
+            }}
+          >
+            사용자 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
           </div>
         </div>
       )}
 
-      {users && (
-        <div
-          style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-          }}
-        >
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#34495e', color: 'white' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>이메일</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>이름</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>역할</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>팀</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>상태</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>작업</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.length === 0 ? (
+      {filteredUsers && (
+        <div className="card">
+          {isManager && (
+            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#e8f4f8', borderRadius: '4px', fontSize: '0.875rem' }}>
+              본인 팀원만 표시됩니다. (총 {filteredUsers.length}명)
+            </div>
+          )}
+          <div className="table-container">
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#95a5a6' }}>
-                    사용자가 없습니다.
-                  </td>
+                  <th>이름</th>
+                  <th>이메일</th>
+                  <th>역할</th>
+                  <th>팀</th>
+                  <th>상태</th>
+                  <th>등록일</th>
+                  <th>작업</th>
                 </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id} style={{ borderBottom: '1px solid #ecf0f1' }}>
-                    <td style={{ padding: '12px' }}>{user.email}</td>
-                    <td style={{ padding: '12px' }}>{user.name}</td>
-                    <td style={{ padding: '12px' }}>{getRoleLabel(user.role)}</td>
-                    <td style={{ padding: '12px' }}>{user.team?.name || '-'}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          backgroundColor: user.isActive ? '#27ae60' : '#95a5a6',
-                          color: 'white',
-                        }}
-                      >
-                        {user.isActive ? '활성' : '비활성'}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      {user.role !== 'ADMIN' && user.role !== 'MASTER' && (
-                        <button
-                          onClick={() => openEdit(user)}
-                          style={{
-                            padding: '6px 12px',
-                            marginRight: '8px',
-                            backgroundColor: '#3498db',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '4px',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s ease',
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = '#2980b9';
-                            e.currentTarget.style.transform = 'translateY(-1px)';
-                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = '#3498db';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = 'none';
-                          }}
-                        >
-                          수정
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          const pw = prompt('새 비밀번호를 입력하세요:');
-                          if (!pw) return;
-                          resetPasswordMutation.mutate({ id: user.id, newPassword: pw });
-                        }}
-                        style={{
-                          padding: '6px 12px',
-                          backgroundColor: '#e67e22',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '4px',
-                          fontSize: '14px',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#d35400';
-                          e.currentTarget.style.transform = 'translateY(-1px)';
-                          e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = '#e67e22';
-                          e.currentTarget.style.transform = 'translateY(0)';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }}
-                      >
-                        비밀번호 초기화
-                      </button>
+              </thead>
+              <tbody>
+                {filteredUsers.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      style={{
+                        textAlign: 'center',
+                        padding: '2rem',
+                        color: '#95a5a6',
+                      }}
+                    >
+                      {isManager ? '본인 팀원이 없습니다.' : '사용자 데이터가 없습니다.'}
                     </td>
                   </tr>
-                ))
+                ) : (
+                  filteredUsers.map((user: AdminUser) => (
+                    <tr key={user.id}>
+                      <td>{user.name}</td>
+                      <td>{user.email}</td>
+                      <td>{getRoleLabel(user.role)}</td>
+                      <td>{user.team?.name || '-'}</td>
+                      <td>
+                        <span
+                          className={
+                            user.isActive ? 'badge badge-success' : 'badge badge-danger'
+                          }
+                        >
+                          {user.isActive ? '활성' : '비활성'}
+                        </span>
+                      </td>
+                      <td>{formatDate(user.createdAt)}</td>
+                      <td>
+                        <div className="button-group">
+                          {/* 사원은 본인 계정만 보이므로 수정 버튼 숨김 (비밀번호만 변경 가능) */}
+                          {!isStaff && (
+                            <button
+                              className="button button-outline"
+                              onClick={() => handleEdit(user)}
+                              style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
+                            >
+                              수정
+                            </button>
+                          )}
+                          <button
+                            className="button button-outline"
+                            onClick={() => handlePasswordReset(user)}
+                            style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
+                          >
+                            비밀번호
+                          </button>
+                          {/* 사원은 활성/비활성 버튼 숨김 */}
+                          {!isStaff && user.id !== currentUser?.id && (
+                            <button
+                              className={`button ${user.isActive ? 'button-secondary' : 'button-primary'}`}
+                              onClick={() => handleToggleActive(user)}
+                              disabled={updateMutation.isPending}
+                              style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
+                            >
+                              {user.isActive ? '비활성' : '활성'}
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* 사용자 등록 모달 */}
+      {showCreateModal && (
+        <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0 }}>등록</h2>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label className="form-label">
+                  이메일 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  className="form-input"
+                  value={formData.email}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  이름 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={formData.name}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  역할 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <select
+                  className="form-select"
+                  value={formData.role}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      role: newRole,
+                      // 관리자 역할 선택 시 팀 자동 제거
+                      teamId: newRole === 'ADMIN' ? undefined : prev.teamId,
+                    }));
+                  }}
+                  required
+                  disabled={isManager}
+                >
+                  <option value="STAFF">사원</option>
+                  {!isManager && <option value="MANAGER">팀장</option>}
+                  {isAdmin && <option value="ADMIN">관리자</option>}
+                </select>
+                {isManager && (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                    팀장은 사원만 등록할 수 있습니다.
+                  </p>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  팀
+                </label>
+                <select
+                  className="form-select"
+                  value={formData.teamId || ''}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, teamId: e.target.value || undefined }))}
+                  disabled={isManager || formData.role === 'ADMIN'}
+                >
+                  {!isManager && <option value="">팀 없음</option>}
+                  {availableTeams?.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+                {isManager && (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                    본인 팀에만 등록됩니다.
+                  </p>
+                )}
+                {formData.role === 'ADMIN' && (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                    관리자는 팀 없음으로 고정됩니다.
+                  </p>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  초기 비밀번호 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <input
+                  type="password"
+                  className="form-input"
+                  value={formData.initialPassword}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, initialPassword: e.target.value }))}
+                  required
+                />
+              </div>
+              <div className="button-group" style={{ marginTop: '1.5rem' }}>
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={createMutation.isPending}
+                >
+                  {createMutation.isPending ? '등록 중...' : '등록'}
+                </button>
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => setShowCreateModal(false)}
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 사용자 수정 모달 */}
+      {showEditModal && editingUser && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0 }}>사용자 수정</h2>
+            {isEditingSelf && (
+              <div style={{ 
+                marginBottom: '1rem', 
+                padding: '0.75rem', 
+                backgroundColor: '#fff3cd', 
+                borderRadius: '4px', 
+                fontSize: '0.875rem',
+                color: '#856404'
+              }}>
+                본인 계정은 비밀번호만 수정할 수 있습니다. 역할, 팀, 활성 상태는 변경할 수 없습니다.
+              </div>
+            )}
+            <form onSubmit={handleEditSubmit}>
+              <div className="form-group">
+                <label className="form-label">이름</label>
+                <div style={{ padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                  {editingUser.name}
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">이메일</label>
+                <div style={{ padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
+                  {editingUser.email}
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label">
+                  역할 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <select
+                  className="form-select"
+                  value={editFormData.role || ''}
+                  onChange={(e) => {
+                    const newRole = e.target.value;
+                    setEditFormData((prev) => ({
+                      ...prev,
+                      role: newRole,
+                      // 관리자 역할 선택 시 팀 자동 제거
+                      teamId: newRole === 'ADMIN' ? undefined : prev.teamId,
+                    }));
+                  }}
+                  required
+                  disabled={isManager || isEditingSelf}
+                >
+                  <option value="STAFF">사원</option>
+                  {!isManager && <option value="MANAGER">팀장</option>}
+                  {isAdmin && <option value="ADMIN">관리자</option>}
+                </select>
+                {(isManager || isEditingSelf) && (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                    {isEditingSelf ? '본인 계정의 역할은 변경할 수 없습니다.' : '팀장은 역할을 변경할 수 없습니다.'}
+                  </p>
+                )}
+              </div>
+              <div className="form-group">
+                <label className="form-label">팀</label>
+                <select
+                  className="form-select"
+                  value={editFormData.teamId || ''}
+                  onChange={(e) => setEditFormData((prev) => ({ ...prev, teamId: e.target.value || undefined }))}
+                  disabled={isManager || isEditingSelf || editFormData.role === 'ADMIN'}
+                >
+                  {!isManager && <option value="">팀 없음</option>}
+                  {availableTeams?.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+                {(isManager || isEditingSelf) && (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                    {isEditingSelf ? '본인 계정의 팀은 변경할 수 없습니다.' : '팀장은 팀을 변경할 수 없습니다.'}
+                  </p>
+                )}
+                {editFormData.role === 'ADMIN' && !isEditingSelf && (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                    관리자는 팀 없음으로 고정됩니다.
+                  </p>
+                )}
+              </div>
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isEditingSelf ? 'not-allowed' : 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={editFormData.isActive ?? true}
+                    onChange={(e) => setEditFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
+                    disabled={isEditingSelf}
+                  />
+                  활성 상태
+                </label>
+                {isEditingSelf && (
+                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
+                    본인 계정의 활성 상태는 변경할 수 없습니다.
+                  </p>
+                )}
+              </div>
+              {isEditingSelf && (
+                <div style={{ 
+                  marginTop: '1rem', 
+                  padding: '0.75rem', 
+                  backgroundColor: '#e8f4f8', 
+                  borderRadius: '4px', 
+                  fontSize: '0.875rem' 
+                }}>
+                  비밀번호를 변경하려면 "비밀번호" 버튼을 사용하세요.
+                </div>
               )}
-            </tbody>
-          </table>
+              <div className="button-group" style={{ marginTop: '1.5rem' }}>
+                {!isEditingSelf && (
+                  <button
+                    type="submit"
+                    className="button button-primary"
+                    disabled={updateMutation.isPending}
+                  >
+                    {updateMutation.isPending ? '저장 중...' : '저장'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingUser(null);
+                  }}
+                >
+                  {isEditingSelf ? '닫기' : '취소'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 비밀번호 재설정 모달 */}
+      {showPasswordModal && passwordUser && (
+        <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 style={{ marginTop: 0 }}>비밀번호 재설정</h2>
+            <p style={{ marginBottom: '1rem', color: '#7f8c8d' }}>
+              {passwordUser.name} 사용자의 비밀번호를 재설정합니다.
+            </p>
+            <form onSubmit={handlePasswordSubmit}>
+              <div className="form-group">
+                <label className="form-label">
+                  새 비밀번호 <span style={{ color: '#e74c3c' }}>*</span>
+                </label>
+                <input
+                  type="password"
+                  className="form-input"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+              <div className="button-group" style={{ marginTop: '1.5rem' }}>
+                <button
+                  type="submit"
+                  className="button button-primary"
+                  disabled={resetPasswordMutation.isPending}
+                >
+                  {resetPasswordMutation.isPending ? '재설정 중...' : '재설정'}
+                </button>
+                <button
+                  type="button"
+                  className="button button-outline"
+                  onClick={() => setShowPasswordModal(false)}
+                >
+                  취소
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
   );
-
-  if (mode === 'create') return renderCreate();
-  if (mode === 'edit') return renderEdit();
-  return renderList();
 };

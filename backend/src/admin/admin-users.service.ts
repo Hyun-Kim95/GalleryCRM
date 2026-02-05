@@ -19,6 +19,15 @@ export class AdminUsersService {
 
   async findAll(currentUser: User): Promise<User[]> {
     // MASTER는 여전히 목록에서 제외
+    if (currentUser.role === UserRole.STAFF) {
+      // 사원은 본인 계정만 조회
+      return this.userRepo.find({
+        where: { id: currentUser.id },
+        relations: ['team'],
+        order: { createdAt: 'DESC' },
+      });
+    }
+
     if (currentUser.role === UserRole.MANAGER) {
       // 팀장은 자신의 팀원만 조회
       if (!currentUser.teamId) {
@@ -144,10 +153,17 @@ export class AdminUsersService {
     return this.userRepo.save(user);
   }
 
-  async resetPassword(id: string, dto: ResetPasswordDto): Promise<void> {
+  async resetPassword(id: string, dto: ResetPasswordDto, currentUser?: User): Promise<void> {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    // 사원과 팀장은 본인 비밀번호만 변경 가능
+    if (currentUser && (currentUser.role === UserRole.STAFF || currentUser.role === UserRole.MANAGER)) {
+      if (currentUser.id !== id) {
+        throw new ForbiddenException('본인 비밀번호만 변경할 수 있습니다.');
+      }
     }
 
     user.password = await bcrypt.hash(dto.newPassword, 10);

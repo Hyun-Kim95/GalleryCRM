@@ -13,6 +13,10 @@ export interface AuthResponse {
     name: string;
     role: string;
     teamId: string | null;
+    team: {
+      id: string;
+      name: string;
+    } | null;
   };
 }
 
@@ -22,6 +26,7 @@ export const authApi = {
     return response.data;
   },
 };
+
 
 
 

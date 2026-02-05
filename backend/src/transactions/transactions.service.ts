@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Transaction, TransactionStatus } from '../entities/transaction.entity';
 import { User, UserRole } from '../entities/user.entity';
+import { Customer } from '../entities/customer.entity';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { AuditLogService } from '../audit-logs/audit-logs.service';
 import { AuditAction, AuditEntityType } from '../entities/audit-log.entity';
@@ -20,18 +21,44 @@ export class TransactionsService {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
+    @InjectRepository(Customer)
+    private customerRepository: Repository<Customer>,
     private auditLogService: AuditLogService,
     private entityHistoryService: EntityHistoryService,
     private accessRequestsService: AccessRequestsService,
   ) {}
 
   async create(createDto: CreateTransactionDto, user: User): Promise<Transaction> {
+    // 관리자(ADMIN/MASTER)는 팀이 없어도 거래 생성 가능
+    // 일반 사용자는 팀이 필요
+    if (!user.teamId && user.role !== UserRole.ADMIN && user.role !== UserRole.MASTER) {
+      throw new BadRequestException('User must belong to a team to create transactions');
+    }
+
+    // 관리자(ADMIN/MASTER)는 팀이 없어도 거래 생성 가능 - 고객의 팀을 사용
+    let teamId = user.teamId;
+    if (!teamId && (user.role === UserRole.ADMIN || user.role === UserRole.MASTER)) {
+      // 관리자가 팀이 없으면 고객의 팀을 사용
+      const customer = await this.customerRepository.findOne({
+        where: { id: createDto.customerId },
+      });
+      if (customer?.teamId) {
+        teamId = customer.teamId;
+      } else {
+        throw new BadRequestException('Customer must belong to a team to create transactions');
+      }
+    }
+
     const transaction = this.transactionRepository.create({
-      ...createDto,
-      teamId: user.teamId,
+      customerId: createDto.customerId,
+      artistId: createDto.artistId,
+      amount: createDto.amount,
+      currency: createDto.currency || 'KRW',
+      contractTerms: createDto.contractTerms || null,
+      transactionDate: new Date(createDto.transactionDate),
+      teamId: teamId!,
       createdById: user.id,
       status: TransactionStatus.DRAFT,
-      transactionDate: new Date(createDto.transactionDate),
     });
 
     const saved = await this.transactionRepository.save(transaction);
@@ -127,6 +154,46 @@ export class TransactionsService {
       entityType: AuditEntityType.TRANSACTION,
       entityId: id,
       newValue: { status: TransactionStatus.PENDING },
+    });
+
+    return saved;
+  }
+
+  async approve(id: string, approveDto: { status: TransactionStatus.APPROVED | TransactionStatus.REJECTED; rejectionReason?: string }, user: User): Promise<Transaction> {
+    const transaction = await this.transactionRepository.findOne({
+      where: { id },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException('Transaction not found');
+    }
+
+    if (transaction.status !== TransactionStatus.PENDING) {
+      throw new BadRequestException('Only pending transactions can be approved or rejected');
+    }
+
+    const oldValues = { ...transaction };
+    transaction.status = approveDto.status;
+    
+    if (approveDto.status === TransactionStatus.APPROVED) {
+      transaction.approvedById = user.id;
+      transaction.approvedAt = new Date();
+      transaction.rejectionReason = null;
+    } else {
+      transaction.approvedById = user.id;
+      transaction.approvedAt = new Date();
+      transaction.rejectionReason = approveDto.rejectionReason || null;
+    }
+
+    const saved = await this.transactionRepository.save(transaction);
+
+    await this.auditLogService.create({
+      userId: user.id,
+      action: approveDto.status === TransactionStatus.APPROVED ? AuditAction.APPROVE : AuditAction.REJECT,
+      entityType: AuditEntityType.TRANSACTION,
+      entityId: id,
+      oldValue: oldValues,
+      newValue: saved,
     });
 
     return saved;

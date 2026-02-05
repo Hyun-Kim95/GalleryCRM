@@ -1,58 +1,66 @@
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { accessRequestsApi, AccessRequest, AccessRequestStatus, AccessRequestTargetType, ApproveAccessRequestDto } from '../api/access-requests.api';
-import { useAuthStore } from '../store/authStore';
+import { Link } from 'react-router-dom';
+import { accessRequestsApi, AccessRequest, AccessRequestStatus, AccessRequestTargetType } from '../api/access-requests.api';
 import { formatDateTime } from '../utils/date';
+import { useAuthStore } from '../store/authStore';
 
-export const AccessRequestsList = () => {
-  const user = useAuthStore((state) => state.user);
+export const AccessRequestsList: React.FC = () => {
   const queryClient = useQueryClient();
+  const [accessDuration, setAccessDuration] = useState(24);
+  const { user } = useAuthStore();
+  
+  // 사원(STAFF)은 승인 권한이 없음
+  const canApprove = user?.role !== 'STAFF';
+
   const { data: requests, isLoading, error } = useQuery({
     queryKey: ['access-requests'],
     queryFn: () => accessRequestsApi.getAll(),
   });
 
-  // 열람요청 승인/거부
-  const approveAccessRequestMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: ApproveAccessRequestDto }) =>
+  const approveMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { status: AccessRequestStatus.APPROVED | AccessRequestStatus.REJECTED; accessDurationHours?: number; rejectionReason?: string } }) =>
       accessRequestsApi.approve(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['access-requests'] });
-      alert('처리되었습니다.');
-    },
-    onError: (error: any) => {
-      const msg = error?.response?.data?.message ?? '열람 요청 승인/거부 중 오류가 발생했습니다.';
-      alert(Array.isArray(msg) ? msg.join('\n') : msg);
     },
   });
 
-  const handleApproveAccessRequest = (request: AccessRequest, action: 'approve' | 'reject') => {
-    if (action === 'reject') {
-      const rejectionReason = prompt('거부 사유를 입력하세요:');
-      if (!rejectionReason) return;
+  const handleApprove = (id: string) => {
+    approveMutation.mutate({
+      id,
+      data: { status: AccessRequestStatus.APPROVED, accessDurationHours: accessDuration },
+    });
+  };
 
-      const data: ApproveAccessRequestDto = {
-        status: AccessRequestStatus.REJECTED,
-        rejectionReason,
-      };
-      approveAccessRequestMutation.mutate({ id: request.id, data });
-    } else {
-      const hours = prompt('열람 허용 기간(시간)을 입력하세요 (기본: 24):', '24');
-      const accessDurationHours = hours ? parseInt(hours) : 24;
+  const handleReject = (id: string) => {
+    const reason = prompt('거부 사유를 입력하세요:');
+    if (!reason) return;
+    approveMutation.mutate({
+      id,
+      data: { status: AccessRequestStatus.REJECTED, rejectionReason: reason },
+    });
+  };
 
-      const data: ApproveAccessRequestDto = {
-        status: AccessRequestStatus.APPROVED,
-        accessDurationHours,
-      };
-      approveAccessRequestMutation.mutate({ id: request.id, data });
+  const getStatusLabel = (status: AccessRequestStatus): string => {
+    switch (status) {
+      case AccessRequestStatus.PENDING:
+        return '대기';
+      case AccessRequestStatus.APPROVED:
+        return '승인';
+      case AccessRequestStatus.REJECTED:
+        return '거부';
+      default:
+        return status;
     }
   };
 
-  const getStatusColor = (status: AccessRequestStatus) => {
+  const getStatusColor = (status: AccessRequestStatus): string => {
     switch (status) {
-      case AccessRequestStatus.APPROVED:
-        return '#27ae60';
       case AccessRequestStatus.PENDING:
         return '#f39c12';
+      case AccessRequestStatus.APPROVED:
+        return '#27ae60';
       case AccessRequestStatus.REJECTED:
         return '#e74c3c';
       default:
@@ -60,20 +68,7 @@ export const AccessRequestsList = () => {
     }
   };
 
-  const getStatusLabel = (status: AccessRequestStatus) => {
-    switch (status) {
-      case AccessRequestStatus.APPROVED:
-        return '승인됨';
-      case AccessRequestStatus.PENDING:
-        return '대기중';
-      case AccessRequestStatus.REJECTED:
-        return '거부됨';
-      default:
-        return status;
-    }
-  };
-
-  const getTargetTypeLabel = (type: AccessRequestTargetType) => {
+  const getTargetTypeLabel = (type: AccessRequestTargetType | string): string => {
     switch (type) {
       case AccessRequestTargetType.CUSTOMER:
         return '고객';
@@ -84,179 +79,144 @@ export const AccessRequestsList = () => {
     }
   };
 
-  const isExpired = (expiresAt: string | null) => {
-    if (!expiresAt) return false;
-    return new Date(expiresAt) < new Date();
-  };
+  const pendingRequests = requests?.filter((r) => r.status === AccessRequestStatus.PENDING) || [];
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ margin: 0 }}>열람 요청</h1>
+      <div className="page-header">
+        <h1 className="page-title">열람 요청</h1>
+        {pendingRequests.length > 0 && canApprove && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <label style={{ fontSize: '0.875rem' }}>
+              승인 시 열람 시간:
+              <input
+                type="number"
+                min="1"
+                max="168"
+                value={accessDuration}
+                onChange={(e) => setAccessDuration(Number(e.target.value))}
+                style={{ marginLeft: '0.5rem', padding: '0.25rem', width: '60px' }}
+              />
+              시간
+            </label>
+          </div>
+        )}
       </div>
 
-      {isLoading && <div style={{ textAlign: 'center', padding: '40px' }}>로딩 중...</div>}
+      {isLoading && (
+        <div className="card">
+          <p style={{ textAlign: 'center', padding: '2rem' }}>로딩 중...</p>
+        </div>
+      )}
+
       {error && (
-        <div style={{ backgroundColor: '#e74c3c', color: 'white', padding: '15px', borderRadius: '4px', marginBottom: '20px' }}>
-          오류가 발생했습니다. 다시 시도해주세요.
+        <div className="card">
+          <div style={{ backgroundColor: '#fee', color: '#c33', padding: '1rem', borderRadius: '4px' }}>
+            오류가 발생했습니다. 다시 시도해주세요.
+          </div>
         </div>
       )}
 
       {requests && (
-        <div style={{ backgroundColor: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#34495e', color: 'white' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>요청자</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>대상 유형</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>대상 ID</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>사유</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>상태</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>만료일시</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>요청일시</th>
-                {(user?.role === 'MASTER' || user?.role === 'MANAGER') && (
-                  <th style={{ padding: '12px', textAlign: 'left' }}>작업</th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {requests.length === 0 ? (
+        <div className="card">
+          <div className="table-container">
+            <table className="table">
+              <thead>
                 <tr>
-                  <td colSpan={(user?.role === 'MASTER' || user?.role === 'MANAGER') ? 8 : 7} style={{ padding: '40px', textAlign: 'center', color: '#95a5a6' }}>
-                    열람 요청이 없습니다.
-                  </td>
+                  <th>요청자</th>
+                  <th>대상 유형</th>
+                  <th>대상 ID</th>
+                  <th>사유</th>
+                  <th>상태</th>
+                  <th>요청일</th>
+                  <th>만료일</th>
+                  <th>작업</th>
                 </tr>
-              ) : (
-                requests.map((request) => (
-                  <tr
-                    key={request.id}
-                    style={{
-                      borderBottom: '1px solid #ecf0f1',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f8f9fa';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'white';
-                    }}
-                  >
-                    <td style={{ padding: '12px' }}>{request.requester?.name || '-'}</td>
-                    <td style={{ padding: '12px' }}>{getTargetTypeLabel(request.targetType)}</td>
-                    <td style={{ padding: '12px' }}>
-                      <a
-                        href={`/${request.targetType === AccessRequestTargetType.CUSTOMER ? 'customers' : 'transactions'}/${request.targetId}`}
-                        style={{ color: '#3498db', textDecoration: 'none' }}
-                      >
-                        {request.targetId}
-                      </a>
+              </thead>
+              <tbody>
+                {requests.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#95a5a6' }}>
+                      열람 요청이 없습니다.
                     </td>
-                    <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
-                      {request.reason || '-'}
-                    </td>
-                    <td style={{ padding: '12px' }}>
-                      <span
-                        style={{
-                          padding: '4px 12px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          backgroundColor: getStatusColor(request.status),
-                          color: 'white',
-                        }}
-                      >
-                        {getStatusLabel(request.status)}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
-                      {request.expiresAt
-                        ? isExpired(request.expiresAt)
-                          ? `만료됨 (${formatDateTime(request.expiresAt)})`
-                          : formatDateTime(request.expiresAt)
-                        : '-'}
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '14px', color: '#7f8c8d' }}>
-                      {formatDateTime(request.createdAt)}
-                    </td>
-                    {(user?.role === 'MASTER' || user?.role === 'MANAGER') && (
-                      <td style={{ padding: '12px' }}>
-                        {request.status === AccessRequestStatus.PENDING ? (
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              onClick={() => handleApproveAccessRequest(request, 'approve')}
-                              disabled={approveAccessRequestMutation.isPending}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#27ae60',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!approveAccessRequestMutation.isPending) {
-                                  e.currentTarget.style.backgroundColor = '#229954';
-                                  e.currentTarget.style.transform = 'translateY(-1px)';
-                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!approveAccessRequestMutation.isPending) {
-                                  e.currentTarget.style.backgroundColor = '#27ae60';
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                  e.currentTarget.style.boxShadow = 'none';
-                                }
-                              }}
-                            >
-                              승인
-                            </button>
-                            <button
-                              onClick={() => handleApproveAccessRequest(request, 'reject')}
-                              disabled={approveAccessRequestMutation.isPending}
-                              style={{
-                                padding: '6px 12px',
-                                backgroundColor: '#e74c3c',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                cursor: approveAccessRequestMutation.isPending ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s ease',
-                              }}
-                              onMouseEnter={(e) => {
-                                if (!approveAccessRequestMutation.isPending) {
-                                  e.currentTarget.style.backgroundColor = '#c0392b';
-                                  e.currentTarget.style.transform = 'translateY(-1px)';
-                                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
-                                }
-                              }}
-                              onMouseLeave={(e) => {
-                                if (!approveAccessRequestMutation.isPending) {
-                                  e.currentTarget.style.backgroundColor = '#e74c3c';
-                                  e.currentTarget.style.transform = 'translateY(0)';
-                                  e.currentTarget.style.boxShadow = 'none';
-                                }
-                              }}
-                            >
-                              거부
-                            </button>
-                          </div>
-                        ) : (
-                          <span style={{ color: '#95a5a6', fontSize: '12px' }}>-</span>
+                  </tr>
+                ) : (
+                  requests.map((request: AccessRequest) => (
+                    <tr key={request.id}>
+                      <td>{request.requester?.name || '-'}</td>
+                      <td>{getTargetTypeLabel(request.targetType)}</td>
+                      <td>
+                        {request.targetType === AccessRequestTargetType.CUSTOMER && (
+                          <Link
+                            to={`/customers/${request.targetId}`}
+                            style={{ color: '#3498db', textDecoration: 'none' }}
+                          >
+                            {request.targetId}
+                          </Link>
+                        )}
+                        {request.targetType === AccessRequestTargetType.TRANSACTION && (
+                          <Link
+                            to={`/transactions/${request.targetId}`}
+                            style={{ color: '#3498db', textDecoration: 'none' }}
+                          >
+                            {request.targetId}
+                          </Link>
+                        )}
+                        {request.targetType !== AccessRequestTargetType.CUSTOMER &&
+                          request.targetType !== AccessRequestTargetType.TRANSACTION &&
+                          request.targetId}
+                      </td>
+                      <td>{request.reason || '-'}</td>
+                      <td>
+                        <span
+                          className="badge"
+                          style={{
+                            backgroundColor: getStatusColor(request.status),
+                            color: 'white',
+                          }}
+                        >
+                          {getStatusLabel(request.status)}
+                        </span>
+                      </td>
+                      <td>{formatDateTime(request.createdAt)}</td>
+                      <td>{request.expiresAt ? formatDateTime(request.expiresAt) : '-'}</td>
+                      <td>
+                        {request.status === AccessRequestStatus.PENDING && (
+                          canApprove ? (
+                            <div className="button-group">
+                              <button
+                                className="button button-primary"
+                                onClick={() => handleApprove(request.id)}
+                                disabled={approveMutation.isPending}
+                              >
+                                승인
+                              </button>
+                              <button
+                                className="button button-danger"
+                                onClick={() => handleReject(request.id)}
+                                disabled={approveMutation.isPending}
+                              >
+                                거부
+                              </button>
+                            </div>
+                          ) : (
+                            <span style={{ color: '#95a5a6', fontSize: '0.875rem' }}>승인 권한 없음</span>
+                          )
+                        )}
+                        {request.status === AccessRequestStatus.APPROVED && request.approvedBy && (
+                          <span style={{ fontSize: '0.875rem', color: '#7f8c8d' }}>
+                            {request.approvedBy.name} 승인
+                          </span>
                         )}
                       </td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
-
     </div>
   );
 };
-
-

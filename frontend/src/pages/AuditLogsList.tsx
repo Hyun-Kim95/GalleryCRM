@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/authStore';
 import { Link } from 'react-router-dom';
 
 export const AuditLogsList = () => {
-  const user = useAuthStore((state) => state.user);
+  // const user = useAuthStore((state) => state.user);
   const [filters, setFilters] = useState<{
     entityType?: AuditEntityType;
     entityId?: string;
@@ -90,9 +90,103 @@ export const AuditLogsList = () => {
         return `/customers/${id}`;
       case AuditEntityType.ARTIST:
         return `/artists/${id}`;
+      case AuditEntityType.TRANSACTION:
+        return `/transactions/${id}`;
+      case AuditEntityType.USER:
+        return `/admin/users`;
+      case AuditEntityType.TEAM:
+        return `/teams`;
       default:
         return null;
     }
+  };
+
+  const getFieldLabel = (key: string): string => {
+    switch (key) {
+      case 'name':
+        return '이름';
+      case 'email':
+        return '이메일';
+      case 'phone':
+        return '전화번호';
+      case 'address':
+        return '주소';
+      case 'status':
+        return '상태';
+      case 'reason':
+        return '사유';
+      case 'rejectionReason':
+      case 'rejection_reason':
+        return '반려 사유';
+      case 'amount':
+        return '금액';
+      case 'currency':
+        return '통화';
+      case 'transactionDate':
+        return '거래일';
+      case 'approvedAt':
+        return '승인일';
+      case 'createdAt':
+        return '등록일';
+      case 'updatedAt':
+        return '수정일';
+      case 'approved':
+        return '승인 여부';
+      case 'isActive':
+        return '활성 여부';
+      case 'contractTerms':
+      case 'contract_terms':
+        return '계약 조건';
+      case 'teamId':
+        return '팀 ID';
+      case 'team':
+        return '팀';
+      case 'customerId':
+        return '고객 ID';
+      case 'artistId':
+        return '작가 ID';
+      case 'createdById':
+        return '작성자 ID';
+      case 'approvedById':
+        return '승인자 ID';
+      case 'createdBy':
+        return '작성자';
+      case 'approvedBy':
+        return '승인자';
+      default:
+        return key;
+    }
+  };
+
+  const formatValue = (key: string, value: any): string => {
+    if (value === null || value === undefined) return '-';
+
+    // 상태 값 한글 변환
+    if (typeof value === 'string') {
+      const upper = value.toUpperCase();
+      if (upper === 'DRAFT') return '초안';
+      if (upper === 'PENDING') return '대기';
+      if (upper === 'APPROVED') return '승인';
+      if (upper === 'REJECTED') return '반려';
+
+      // 불리언/플래그성 필드에 대한 한글 변환
+      if (key === 'approved' || key === 'isActive') {
+        if (value === 'true' || value === '1') return '예';
+        if (value === 'false' || value === '0') return '아니오';
+      }
+
+      return value;
+    }
+
+    if (typeof value === 'boolean') {
+      return value ? '예' : '아니오';
+    }
+
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    // 객체나 배열은 한 줄 JSON으로
+    return JSON.stringify(value);
   };
 
   return (
@@ -210,22 +304,22 @@ export const AuditLogsList = () => {
           style={{
             backgroundColor: 'white',
             borderRadius: '8px',
-            overflow: 'hidden',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
           }}
         >
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ backgroundColor: '#34495e', color: 'white' }}>
-                <th style={{ padding: '12px', textAlign: 'left' }}>일시</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>사용자</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>작업</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>엔티티 유형</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>엔티티 ID</th>
-                <th style={{ padding: '12px', textAlign: 'left' }}>상세</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div className="table-container">
+            <table className="audit-logs-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#34495e', color: 'white' }}>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>일시</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>사용자</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>작업</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>엔티티 유형</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>엔티티 ID</th>
+                  <th style={{ padding: '12px', textAlign: 'left' }}>상세</th>
+                </tr>
+              </thead>
+              <tbody>
               {logs.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#95a5a6' }}>
@@ -267,7 +361,19 @@ export const AuditLogsList = () => {
                         </span>
                       </td>
                       <td style={{ padding: '12px' }}>{getEntityTypeLabel(log.entityType)}</td>
-                      <td style={{ padding: '12px' }}>
+                      <td
+                        style={{
+                          padding: '12px',
+                          maxWidth: '220px',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          fontSize: '12px',
+                          color: '#7f8c8d',
+                          fontFamily: 'monospace',
+                        }}
+                        title={log.entityId}
+                      >
                         {entityLink ? (
                           <Link
                             to={entityLink}
@@ -280,28 +386,57 @@ export const AuditLogsList = () => {
                         )}
                       </td>
                       <td style={{ padding: '12px', fontSize: '12px', color: '#7f8c8d' }}>
-                        {log.newValue && Object.keys(log.newValue).length > 0 ? (
-                          <details>
-                            <summary style={{ cursor: 'pointer', color: '#3498db' }}>상세 보기</summary>
-                            <div
-                              style={{
-                                marginTop: '8px',
-                                padding: '8px',
-                                backgroundColor: '#f8f9fa',
-                                borderRadius: '4px',
-                                fontSize: '11px',
-                                maxWidth: '300px',
-                                overflow: 'auto',
-                              }}
-                            >
-                              <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-                                {JSON.stringify(log.newValue, null, 2)}
-                              </pre>
-                            </div>
-                          </details>
-                        ) : (
-                          '-'
-                        )}
+                        {(() => {
+                          // 생성/수정/승인 로그는 상세 내용을 별도로 보여주지 않음
+                          if (
+                            log.action === AuditAction.CREATE ||
+                            log.action === AuditAction.UPDATE ||
+                            log.action === AuditAction.APPROVE
+                          ) {
+                            return '-';
+                          }
+
+                          const newValue: any = log.newValue || {};
+                          const reason: string | undefined =
+                            newValue.reason || newValue.rejectionReason || newValue.rejection_reason;
+
+                          if (reason) {
+                            return <span>{reason}</span>;
+                          }
+
+                          if (log.newValue && Object.keys(log.newValue).length > 0) {
+                            const entries = Object.entries(log.newValue);
+                            return (
+                              <details>
+                                <summary style={{ cursor: 'pointer', color: '#3498db' }}>상세 보기</summary>
+                                <div
+                                  style={{
+                                    marginTop: '8px',
+                                    padding: '8px',
+                                    backgroundColor: '#f8f9fa',
+                                    borderRadius: '4px',
+                                    fontSize: '11px',
+                                    maxWidth: '320px',
+                                    maxHeight: '260px',
+                                    overflow: 'auto',
+                                  }}
+                                >
+                                  {entries.map(([key, value]) => {
+                                    const label = getFieldLabel(key);
+                                    return (
+                                      <div key={key} style={{ marginBottom: '4px' }}>
+                                        <span style={{ fontWeight: 600 }}>{label}</span>
+                                        <span style={{ marginLeft: '4px' }}>{formatValue(key, value)}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </details>
+                            );
+                          }
+
+                          return '-';
+                        })()}
                       </td>
                     </tr>
                   );
@@ -309,10 +444,12 @@ export const AuditLogsList = () => {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
   );
 };
+
 
 

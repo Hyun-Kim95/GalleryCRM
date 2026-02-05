@@ -52,10 +52,15 @@ export class AuthService {
         name: user.name,
         role: user.role,
         teamId: user.teamId,
+        team: user.team ? {
+          id: user.team.id,
+          name: user.team.name,
+        } : null,
       },
     };
   }
 }
+
 
 
 

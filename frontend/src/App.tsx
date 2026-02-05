@@ -16,8 +16,12 @@ import { AccessRequestsList } from './pages/AccessRequestsList';
 import { ApprovalsDashboard } from './pages/ApprovalsDashboard';
 import { AdminUsers } from './pages/AdminUsers';
 import { TeamsManagement } from './pages/TeamsManagement';
+import { TransactionsList } from './pages/TransactionsList';
+import { TransactionDetail } from './pages/TransactionDetail';
+import { TransactionForm } from './pages/TransactionForm';
 import { useAuthStore } from './store/authStore';
 import './App.css';
+import './styles/responsive.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,6 +129,46 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <ArtistDetail />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TransactionsList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions/new"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TransactionForm />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions/:id/edit"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TransactionForm />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/transactions/:id"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TransactionDetail />
                 </Layout>
               </ProtectedRoute>
             }

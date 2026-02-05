@@ -18,7 +18,7 @@ export class AdminUsersController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.MASTER, UserRole.MANAGER)
+  @Roles(UserRole.ADMIN, UserRole.MASTER, UserRole.MANAGER, UserRole.STAFF)
   @Permissions('MANAGE_USERS')
   @ApiOperation({ summary: '사용자 목록 조회' })
   async findAll(@CurrentUser() user: User) {
@@ -51,11 +51,11 @@ export class AdminUsersController {
   }
 
   @Patch(':id/reset-password')
-  @Roles(UserRole.ADMIN, UserRole.MASTER)
+  @Roles(UserRole.ADMIN, UserRole.MASTER, UserRole.MANAGER, UserRole.STAFF)
   @Permissions('MANAGE_USERS')
   @ApiOperation({ summary: '사용자 비밀번호 초기화' })
-  async resetPassword(@Param('id') id: string, @Body() dto: ResetPasswordDto) {
-    await this.adminUsersService.resetPassword(id, dto);
+  async resetPassword(@Param('id') id: string, @Body() dto: ResetPasswordDto, @CurrentUser() user: User) {
+    await this.adminUsersService.resetPassword(id, dto, user);
     return { success: true };
   }
 }

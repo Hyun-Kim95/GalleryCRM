@@ -45,7 +45,7 @@ export async function seedInitialData(dataSource: DataSource): Promise<void> {
       password: hashedPassword,
       name: 'Master Admin',
       role: UserRole.MASTER,
-      teamId: managementTeam.id,
+      teamId: undefined, // 관리자는 팀 없음
       isActive: true,
     });
     adminUser = await userRepository.save(adminUser);
@@ -54,13 +54,22 @@ export async function seedInitialData(dataSource: DataSource): Promise<void> {
     console.log(`   Password: admin123`);
     console.log('   ⚠️  Please change the password after first login!');
   } else {
-    // 기존 계정이 있으면 MASTER로 업데이트
+    // 기존 계정이 있으면 MASTER로 업데이트하고 팀을 null로 설정
+    let updated = false;
     if (adminUser.role !== UserRole.MASTER) {
       adminUser.role = UserRole.MASTER;
-      adminUser = await userRepository.save(adminUser);
+      updated = true;
       console.log('✅ Updated admin user to MASTER role');
+    }
+    if (adminUser.teamId !== null && adminUser.teamId !== undefined) {
+      (adminUser as any).teamId = null;
+      updated = true;
+      console.log('✅ Updated admin user team to null (no team)');
+    }
+    if (updated) {
+      adminUser = await userRepository.save(adminUser);
     } else {
-      console.log('ℹ️  Admin user already exists with MASTER role');
+      console.log('ℹ️  Admin user already exists with MASTER role and no team');
     }
   }
 
@@ -162,6 +171,9 @@ export async function seedInitialData(dataSource: DataSource): Promise<void> {
 
   // MANAGER: 고객 승인 + 사용자 관리(팀원 한정)
   await ensureRolePermissions(UserRole.MANAGER, ['APPROVE_CUSTOMER', 'MANAGE_USERS']);
+
+  // STAFF: 사용자 관리(본인 계정 한정 - 비밀번호 변경)
+  await ensureRolePermissions(UserRole.STAFF, ['MANAGE_USERS']);
 
   console.log('✨ Database seeding completed!');
 }
