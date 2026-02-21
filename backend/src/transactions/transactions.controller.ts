@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, UseGuards } from '@nestjs/co
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { TransactionsService } from './transactions.service';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { ApproveTransactionDto } from './dto/approve-transaction.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User, UserRole } from '../entities/user.entity';
@@ -33,6 +34,16 @@ export class TransactionsController {
   @ApiOperation({ summary: 'Get transaction by id' })
   async findOne(@Param('id') id: string, @CurrentUser() user: User) {
     return this.transactionsService.findOne(id, user);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update transaction' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateTransactionDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.transactionsService.update(id, updateDto, user);
   }
 
   @Post(':id/submit')

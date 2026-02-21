@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -33,7 +33,30 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { isAuthenticated, isInitialized, initializeAuth } = useAuthStore();
+
+  // 앱 시작 시 토큰 검증
+  useEffect(() => {
+    if (!isInitialized) {
+      initializeAuth();
+    }
+  }, [isInitialized, initializeAuth]);
+
+  // 인증 초기화가 완료될 때까지 로딩 표시
+  if (!isInitialized) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        fontSize: '1.2rem',
+        color: '#7f8c8d'
+      }}>
+        로딩 중...
+      </div>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>

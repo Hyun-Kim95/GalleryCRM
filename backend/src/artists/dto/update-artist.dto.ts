@@ -5,3 +5,12 @@ export class UpdateArtistDto extends PartialType(CreateArtistDto) {}
 
 
 
+
+
+
+
+
+
+
+
+

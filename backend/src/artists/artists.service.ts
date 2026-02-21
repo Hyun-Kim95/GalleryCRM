@@ -8,6 +8,7 @@ import { AuditLogService } from '../audit-logs/audit-logs.service';
 import { AuditAction, AuditEntityType } from '../entities/audit-log.entity';
 import { User, UserRole } from '../entities/user.entity';
 import { ApproveArtistDto } from './dto/approve-artist.dto';
+import { SearchArtistDto } from './dto/search-artist.dto';
 
 @Injectable()
 export class ArtistsService {
@@ -46,6 +47,42 @@ export class ArtistsService {
       order: { name: 'ASC' },
       relations: ['createdBy', 'approvedBy'],
     });
+  }
+
+  async search(searchDto: SearchArtistDto) {
+    const { keyword, status, page = 1, limit = 20 } = searchDto;
+
+    const query = this.artistRepository
+      .createQueryBuilder('artist')
+      .leftJoinAndSelect('artist.createdBy', 'createdBy')
+      .leftJoinAndSelect('artist.approvedBy', 'approvedBy');
+
+    // 검색 조건
+    if (keyword) {
+      query.andWhere(
+        '(artist.name LIKE :keyword OR artist.nationality LIKE :keyword OR artist.genre LIKE :keyword)',
+        { keyword: `%${keyword}%` },
+      );
+    }
+
+    if (status) {
+      query.andWhere('artist.status = :status', { status });
+    }
+
+    // 페이지네이션
+    const skip = (page - 1) * limit;
+    query.skip(skip).take(limit);
+    query.orderBy('artist.createdAt', 'DESC');
+
+    const [data, total] = await query.getManyAndCount();
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findPending(): Promise<Artist[]> {

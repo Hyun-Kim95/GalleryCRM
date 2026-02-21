@@ -8,9 +8,20 @@ import { useAuthStore } from '../store/authStore';
 export const ArtistsList: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { data: artists, isLoading, error } = useQuery({
-    queryKey: ['artists'],
-    queryFn: () => artistsApi.getAll(),
+  const [searchParams, setSearchParams] = useState({
+    keyword: '',
+    status: '' as ArtistStatus | '',
+    page: 1,
+    limit: 20,
+  });
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['artists', searchParams],
+    queryFn: () => artistsApi.search({
+      ...searchParams,
+      status: searchParams.status || undefined,
+      keyword: searchParams.keyword || undefined,
+    }),
   });
 
   const getStatusLabel = (status: ArtistStatus): string => {
@@ -43,6 +54,11 @@ export const ArtistsList: React.FC = () => {
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchParams((prev) => ({ ...prev, page: 1 }));
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -52,6 +68,35 @@ export const ArtistsList: React.FC = () => {
         </Link>
       </div>
 
+      {/* 검색 및 필터 */}
+      <div className="card">
+        <form onSubmit={handleSearch} className="search-filter-container">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="이름, 국적, 장르로 검색..."
+            value={searchParams.keyword}
+            onChange={(e) => setSearchParams((prev) => ({ ...prev, keyword: e.target.value, page: 1 }))}
+          />
+          <select
+            className="form-select"
+            value={searchParams.status}
+            onChange={(e) => setSearchParams((prev) => ({ ...prev, status: e.target.value as ArtistStatus | '', page: 1 }))}
+            style={{ minWidth: '150px' }}
+          >
+            <option value="">전체 상태</option>
+            <option value={ArtistStatus.DRAFT}>초안</option>
+            <option value={ArtistStatus.PENDING}>대기</option>
+            <option value={ArtistStatus.APPROVED}>승인</option>
+            <option value={ArtistStatus.REJECTED}>반려</option>
+          </select>
+          <button type="submit" className="button button-primary">
+            검색
+          </button>
+        </form>
+      </div>
+
+      {/* 결과 테이블 */}
       {isLoading && (
         <div className="card">
           <p style={{ textAlign: 'center', padding: '2rem' }}>로딩 중...</p>
@@ -66,29 +111,30 @@ export const ArtistsList: React.FC = () => {
         </div>
       )}
 
-      {artists && (
-        <div className="card">
-          <div className="table-container">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>이름</th>
-                  <th>국적</th>
-                  <th>장르</th>
-                  <th>상태</th>
-                  <th>등록일</th>
-                  <th>작업</th>
-                </tr>
-              </thead>
+      {data && (
+        <>
+          <div className="card">
+            <div className="table-container">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>이름</th>
+                    <th>국적</th>
+                    <th>장르</th>
+                    <th>상태</th>
+                    <th>등록일</th>
+                    <th>작업</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {artists.length === 0 ? (
+                  {data.data.length === 0 ? (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#95a5a6' }}>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#95a5a6' }}>
                         작가 데이터가 없습니다.
                       </td>
                     </tr>
                   ) : (
-                    artists.map((artist: Artist) => {
+                    data.data.map((artist: Artist) => {
                       const canEdit =
                         artist.createdById === user?.id ||
                         user?.role === 'ADMIN' ||
@@ -134,9 +180,33 @@ export const ArtistsList: React.FC = () => {
                     })
                   )}
                 </tbody>
-            </table>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* 페이지네이션 */}
+          {data.totalPages > 1 && (
+            <div className="pagination">
+              <button
+                className="button button-outline"
+                onClick={() => setSearchParams((prev) => ({ ...prev, page: prev.page - 1 }))}
+                disabled={searchParams.page === 1}
+              >
+                이전
+              </button>
+              <span style={{ padding: '0 1rem' }}>
+                {searchParams.page} / {data.totalPages} (총 {data.total}개)
+              </span>
+              <button
+                className="button button-outline"
+                onClick={() => setSearchParams((prev) => ({ ...prev, page: prev.page + 1 }))}
+                disabled={searchParams.page >= data.totalPages}
+              >
+                다음
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

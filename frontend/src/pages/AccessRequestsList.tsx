@@ -86,19 +86,20 @@ export const AccessRequestsList: React.FC = () => {
       <div className="page-header">
         <h1 className="page-title">열람 요청</h1>
         {pendingRequests.length > 0 && canApprove && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <label style={{ fontSize: '0.875rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <label className="form-label" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
               승인 시 열람 시간:
-              <input
-                type="number"
-                min="1"
-                max="168"
-                value={accessDuration}
-                onChange={(e) => setAccessDuration(Number(e.target.value))}
-                style={{ marginLeft: '0.5rem', padding: '0.25rem', width: '60px' }}
-              />
-              시간
             </label>
+            <input
+              type="number"
+              min="1"
+              max="168"
+              value={accessDuration}
+              onChange={(e) => setAccessDuration(Number(e.target.value))}
+              className="form-input"
+              style={{ width: '60px' }}
+            />
+            <span style={{ fontSize: '0.875rem', color: '#7f8c8d' }}>시간</span>
           </div>
         )}
       </div>
@@ -188,6 +189,7 @@ export const AccessRequestsList: React.FC = () => {
                                 className="button button-primary"
                                 onClick={() => handleApprove(request.id)}
                                 disabled={approveMutation.isPending}
+                                style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                               >
                                 승인
                               </button>
@@ -195,6 +197,7 @@ export const AccessRequestsList: React.FC = () => {
                                 className="button button-danger"
                                 onClick={() => handleReject(request.id)}
                                 disabled={approveMutation.isPending}
+                                style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                               >
                                 거부
                               </button>

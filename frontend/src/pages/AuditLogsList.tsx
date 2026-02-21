@@ -192,7 +192,7 @@ export const AuditLogsList = () => {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-        <h1 style={{ margin: 0 }}>활동 기록</h1>
+        <h1 style={{ margin: 0 }}>활동로그</h1>
       </div>
 
       {/* 필터 */}
@@ -323,7 +323,7 @@ export const AuditLogsList = () => {
               {logs.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: '#95a5a6' }}>
-                    활동 기록이 없습니다.
+                    활동로그가 없습니다.
                   </td>
                 </tr>
               ) : (

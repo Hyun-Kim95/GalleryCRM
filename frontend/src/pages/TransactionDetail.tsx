@@ -109,7 +109,9 @@ export const TransactionDetail: React.FC = () => {
     transaction.status === TransactionStatus.DRAFT &&
     (transaction.createdById === user?.id || 
      user?.role === 'ADMIN' || 
-     user?.role === 'MASTER');
+     user?.role === 'MASTER') &&
+    transaction.customer?.status === 'APPROVED' &&
+    transaction.artist?.status === 'APPROVED';
 
   return (
     <div>
@@ -132,6 +134,27 @@ export const TransactionDetail: React.FC = () => {
             >
               {submitMutation.isPending ? '제출 중...' : '승인 요청'}
             </button>
+          )}
+          {transaction.status === TransactionStatus.DRAFT &&
+           (transaction.createdById === user?.id || 
+            user?.role === 'ADMIN' || 
+            user?.role === 'MASTER') &&
+           (!canSubmit) && (
+            <div style={{ 
+              padding: '0.5rem 1rem', 
+              backgroundColor: '#fff3cd', 
+              borderRadius: '4px',
+              fontSize: '0.875rem',
+              color: '#856404',
+              border: '1px solid #ffc107',
+              marginLeft: '0.5rem'
+            }}>
+              {transaction.customer?.status !== 'APPROVED' && transaction.artist?.status !== 'APPROVED' 
+                ? '⚠️ 고객과 작가가 모두 승인되어야 합니다.'
+                : transaction.customer?.status !== 'APPROVED'
+                ? '⚠️ 고객이 승인되어야 합니다.'
+                : '⚠️ 작가가 승인되어야 합니다.'}
+            </div>
           )}
         </div>
       </div>

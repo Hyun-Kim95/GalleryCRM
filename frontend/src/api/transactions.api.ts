@@ -14,11 +14,13 @@ export interface Transaction {
     id: string;
     name: string;
     email: string | null;
+    status?: string;
   };
   artistId: string;
   artist: {
     id: string;
     name: string;
+    status?: string;
   };
   amount: number;
   currency: string;
@@ -57,6 +59,15 @@ export interface CreateTransactionDto {
   transactionDate: string;
 }
 
+export interface UpdateTransactionDto {
+  customerId?: string;
+  artistId?: string;
+  amount?: number;
+  currency?: string;
+  contractTerms?: string;
+  transactionDate?: string;
+}
+
 export interface ApproveTransactionDto {
   status: TransactionStatus.APPROVED | TransactionStatus.REJECTED;
   rejectionReason?: string;
@@ -75,6 +86,11 @@ export const transactionsApi = {
 
   create: async (data: CreateTransactionDto): Promise<Transaction> => {
     const response = await apiClient.post<Transaction>('/transactions', data);
+    return response.data;
+  },
+
+  update: async (id: string, data: UpdateTransactionDto): Promise<Transaction> => {
+    const response = await apiClient.patch<Transaction>(`/transactions/${id}`, data);
     return response.data;
   },
 
