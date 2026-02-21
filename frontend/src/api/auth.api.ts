@@ -25,6 +25,10 @@ export const authApi = {
     const response = await apiClient.post<AuthResponse>('/auth/login', data);
     return response.data;
   },
+  verify: async (): Promise<AuthResponse> => {
+    const response = await apiClient.get<AuthResponse>('/auth/me');
+    return response.data;
+  },
 };
 
 

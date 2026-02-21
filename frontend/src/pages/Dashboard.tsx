@@ -29,6 +29,17 @@ export const Dashboard: React.FC = () => {
     (r) => r.status === 'PENDING'
   ).length || 0;
 
+  const getStatusLabel = (status: string): string => {
+    const statusMap: Record<string, string> = {
+      'PENDING': '대기 중',
+      'APPROVED': '승인됨',
+      'REJECTED': '거부됨',
+      'ACTIVE': '활성',
+      'INACTIVE': '비활성',
+    };
+    return statusMap[status] || status;
+  };
+
   return (
     <div>
       <h1 className="page-title">대시보드</h1>
@@ -88,7 +99,7 @@ export const Dashboard: React.FC = () => {
                           {customer.name}
                         </Link>
                       </td>
-                      <td>{customer.status}</td>
+                      <td>{getStatusLabel(customer.status)}</td>
                       <td>
                         <Link to={`/customers/${customer.id}`} className="button button-outline" style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}>
                           보기

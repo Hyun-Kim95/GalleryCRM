@@ -228,71 +228,55 @@ export const TeamsManagement: React.FC = () => {
                                 }}
                               >
                                 <td></td>
-                                <td colSpan={6} style={{ paddingLeft: '1.5rem' }}>
-                                  <div
-                                    style={{
-                                      display: 'grid',
-                                      gridTemplateColumns: '16px minmax(0, 1.2fr) minmax(0, 1.8fr) auto',
-                                      alignItems: 'center',
-                                      columnGap: '0.75rem',
-                                      minWidth: 0,
-                                    }}
-                                  >
+                                <td style={{ paddingLeft: '1.5rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span
                                       style={{
                                         width: '8px',
                                         height: '8px',
                                         borderRadius: '50%',
                                         backgroundColor: user.isActive ? '#27ae60' : '#e74c3c',
+                                        flexShrink: 0,
                                       }}
                                     ></span>
-                                    <div
+                                    <strong
                                       style={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr auto',
-                                        alignItems: 'center',
-                                        columnGap: '0.4rem',
-                                        minWidth: 0,
-                                      }}
-                                    >
-                                      <strong
-                                        style={{
-                                          whiteSpace: 'nowrap',
-                                          overflow: 'hidden',
-                                          textOverflow: 'ellipsis',
-                                        }}
-                                      >
-                                        {user.name || user.email}
-                                      </strong>
-                                      <span
-                                        className="badge badge-info"
-                                        style={{ fontSize: '0.75rem', justifySelf: 'flex-start' }}
-                                      >
-                                        {getRoleLabel(user.role)}
-                                      </span>
-                                    </div>
-                                    <span
-                                      style={{
-                                        color: '#7f8c8d',
-                                        fontSize: '0.875rem',
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
-                                        minWidth: 0,
                                       }}
                                     >
-                                      {user.email}
+                                      {user.name || user.email}
+                                    </strong>
+                                    <span
+                                      className="badge badge-info"
+                                      style={{ fontSize: '0.75rem', flexShrink: 0 }}
+                                    >
+                                      {getRoleLabel(user.role)}
                                     </span>
-                                    {!user.isActive && (
-                                      <span
-                                        className="badge badge-danger"
-                                        style={{ fontSize: '0.75rem', justifySelf: 'flex-end' }}
-                                      >
-                                        비활성
-                                      </span>
-                                    )}
                                   </div>
                                 </td>
+                                <td>
+                                  <span
+                                    style={{
+                                      color: '#7f8c8d',
+                                      fontSize: '0.875rem',
+                                    }}
+                                  >
+                                    {user.email}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span
+                                    className={user.isActive ? 'badge badge-success' : 'badge badge-danger'}
+                                    style={{ fontSize: '0.75rem' }}
+                                  >
+                                    {user.isActive ? '활성' : '비활성'}
+                                  </span>
+                                </td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
                               </tr>
                             ))}
                           </>
@@ -359,7 +343,7 @@ export const TeamsManagement: React.FC = () => {
       {showEditModal && editingTeam && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>팀 수정</h2>
+            <h2 style={{ marginTop: 0 }}>수정</h2>
             <form onSubmit={handleEditSubmit}>
               <div className="form-group">
                 <label className="form-label">

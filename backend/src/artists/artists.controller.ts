@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch, UseGuards, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ArtistsService } from './artists.service';
 import { CreateArtistDto } from './dto/create-artist.dto';
@@ -9,6 +9,7 @@ import { UserRole } from '../entities/user.entity';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/user.entity';
 import { ApproveArtistDto } from './dto/approve-artist.dto';
+import { SearchArtistDto } from './dto/search-artist.dto';
 
 @ApiTags('artists')
 @Controller('artists')
@@ -25,8 +26,12 @@ export class ArtistsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all active artists' })
-  async findAll() {
+  @ApiOperation({ summary: 'Get all active artists or search artists' })
+  async findAll(@Query() searchDto: SearchArtistDto) {
+    // 검색 파라미터가 있으면 search, 없으면 findAll
+    if (searchDto.keyword || searchDto.status || searchDto.page || searchDto.limit) {
+      return this.artistsService.search(searchDto);
+    }
     return this.artistsService.findAll();
   }
 

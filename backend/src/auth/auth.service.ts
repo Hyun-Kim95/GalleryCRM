@@ -59,6 +59,29 @@ export class AuthService {
       },
     };
   }
+
+  async getUserInfo(user: any): Promise<AuthResponseDto> {
+    // 사용자 정보를 최신 정보로 가져오기
+    const currentUser = await this.usersService.findOneById(user.id);
+    if (!currentUser || !currentUser.isActive) {
+      throw new UnauthorizedException('User not found or inactive');
+    }
+
+    return {
+      accessToken: '', // me 엔드포인트에서는 토큰을 반환하지 않음
+      user: {
+        id: currentUser.id,
+        email: currentUser.email,
+        name: currentUser.name,
+        role: currentUser.role,
+        teamId: currentUser.teamId,
+        team: currentUser.team ? {
+          id: currentUser.team.id,
+          name: currentUser.team.name,
+        } : null,
+      },
+    };
+  }
 }
 
 

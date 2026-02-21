@@ -413,7 +413,7 @@ export const AdminUsers: React.FC = () => {
       {showEditModal && editingUser && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>사용자 수정</h2>
+            <h2 style={{ marginTop: 0 }}>수정</h2>
             {isEditingSelf && (
               <div style={{ 
                 marginBottom: '1rem', 
@@ -491,22 +491,6 @@ export const AdminUsers: React.FC = () => {
                 {editFormData.role === 'ADMIN' && !isEditingSelf && (
                   <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
                     관리자는 팀 없음으로 고정됩니다.
-                  </p>
-                )}
-              </div>
-              <div className="form-group">
-                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isEditingSelf ? 'not-allowed' : 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={editFormData.isActive ?? true}
-                    onChange={(e) => setEditFormData((prev) => ({ ...prev, isActive: e.target.checked }))}
-                    disabled={isEditingSelf}
-                  />
-                  활성 상태
-                </label>
-                {isEditingSelf && (
-                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                    본인 계정의 활성 상태는 변경할 수 없습니다.
                   </p>
                 )}
               </div>

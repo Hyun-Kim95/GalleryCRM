@@ -52,9 +52,29 @@ export interface ApproveArtistDto {
   rejectionReason?: string;
 }
 
+export interface SearchArtistParams {
+  keyword?: string;
+  status?: ArtistStatus;
+  page?: number;
+  limit?: number;
+}
+
+export interface SearchArtistResponse {
+  data: Artist[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export const artistsApi = {
   getAll: async (): Promise<Artist[]> => {
     const response = await apiClient.get<Artist[]>('/artists');
+    return response.data;
+  },
+
+  search: async (params: SearchArtistParams): Promise<SearchArtistResponse> => {
+    const response = await apiClient.get<SearchArtistResponse>('/artists', { params });
     return response.data;
   },
 

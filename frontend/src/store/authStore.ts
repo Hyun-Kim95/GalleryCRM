@@ -6,8 +6,10 @@ interface AuthState {
   user: AuthResponse['user'] | null;
   token: string | null;
   isAuthenticated: boolean;
+  isInitialized: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  initializeAuth: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -16,6 +18,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      isInitialized: false,
       login: async (email: string, password: string) => {
         const response = await authApi.login({ email, password });
         localStorage.setItem('accessToken', response.accessToken);
@@ -33,6 +36,32 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
         });
       },
+      initializeAuth: async () => {
+        const token = localStorage.getItem('accessToken');
+        if (!token) {
+          set({ isInitialized: true, isAuthenticated: false });
+          return;
+        }
+
+        try {
+          const response = await authApi.verify();
+          set({
+            user: response.user,
+            token: token,
+            isAuthenticated: true,
+            isInitialized: true,
+          });
+        } catch (error) {
+          // 토큰이 유효하지 않으면 로그아웃 처리
+          localStorage.removeItem('accessToken');
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+            isInitialized: true,
+          });
+        }
+      },
     }),
     {
       name: 'auth-storage',
@@ -44,6 +73,12 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+
+
+
+
+
 
 
 
