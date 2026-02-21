@@ -33,7 +33,9 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const { isAuthenticated, isInitialized, initializeAuth } = useAuthStore();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitialized = useAuthStore((state) => state.isInitialized);
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
 
   // 앱 시작 시 토큰 검증
   useEffect(() => {
