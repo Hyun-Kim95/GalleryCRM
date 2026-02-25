@@ -1,0 +1,7 @@
+fix: App.tsx에서 useAuthStore 타입 오류 수정
+
+- zustand selector 패턴을 사용하여 타입 추론 문제 해결
+- isInitialized, initializeAuth 속성 접근 방식 변경
+
+
+
