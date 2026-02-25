@@ -62,7 +62,7 @@ export const ArtistForm: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{isEdit ? '작가 수정' : '등록'}</h1>
+        <h1 className="page-title">{isEdit ? '작가 수정' : '작가 등록'}</h1>
       </div>
 
       <div className="card">
