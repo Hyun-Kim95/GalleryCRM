@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { accessRequestsApi, AccessRequest, AccessRequestStatus, AccessRequestTargetType } from '../api/access-requests.api';
+import { useTranslation } from 'react-i18next';
+import {
+  accessRequestsApi,
+  AccessRequest,
+  AccessRequestStatus,
+  AccessRequestTargetType,
+} from '../api/access-requests.api';
 import { formatDateTime } from '../utils/date';
 import { useAuthStore } from '../store/authStore';
+import { accessRequestBadgeStyle } from '../constants/uiColors';
 
 export const AccessRequestsList: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [accessDuration, setAccessDuration] = useState(24);
   const { user } = useAuthStore();
-  
-  // 사원(STAFF)은 승인 권한이 없음
+
   const canApprove = user?.role !== 'STAFF';
 
   const { data: requests, isLoading, error } = useQuery({
@@ -19,8 +26,17 @@ export const AccessRequestsList: React.FC = () => {
   });
 
   const approveMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { status: AccessRequestStatus.APPROVED | AccessRequestStatus.REJECTED; accessDurationHours?: number; rejectionReason?: string } }) =>
-      accessRequestsApi.approve(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: {
+        status: AccessRequestStatus.APPROVED | AccessRequestStatus.REJECTED;
+        accessDurationHours?: number;
+        rejectionReason?: string;
+      };
+    }) => accessRequestsApi.approve(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['access-requests'] });
     },
@@ -34,7 +50,7 @@ export const AccessRequestsList: React.FC = () => {
   };
 
   const handleReject = (id: string) => {
-    const reason = prompt('거부 사유를 입력하세요:');
+    const reason = window.prompt(t('common.rejectReasonPrompt'));
     if (!reason) return;
     approveMutation.mutate({
       id,
@@ -42,40 +58,30 @@ export const AccessRequestsList: React.FC = () => {
     });
   };
 
-  const getStatusLabel = (status: AccessRequestStatus): string => {
-    switch (status) {
-      case AccessRequestStatus.PENDING:
-        return '대기';
-      case AccessRequestStatus.APPROVED:
-        return '승인';
-      case AccessRequestStatus.REJECTED:
-        return '거부';
-      default:
-        return status;
-    }
-  };
-
-  const getStatusColor = (status: AccessRequestStatus): string => {
-    switch (status) {
-      case AccessRequestStatus.PENDING:
-        return '#f39c12';
-      case AccessRequestStatus.APPROVED:
-        return '#27ae60';
-      case AccessRequestStatus.REJECTED:
-        return '#e74c3c';
-      default:
-        return '#34495e';
-    }
-  };
+  const getStatusLabel = useCallback(
+    (status: AccessRequestStatus): string => {
+      switch (status) {
+        case AccessRequestStatus.PENDING:
+          return t('status.pending');
+        case AccessRequestStatus.APPROVED:
+          return t('status.approved');
+        case AccessRequestStatus.REJECTED:
+          return t('status.denied');
+        default:
+          return status;
+      }
+    },
+    [t]
+  );
 
   const getTargetTypeLabel = (type: AccessRequestTargetType | string): string => {
     switch (type) {
       case AccessRequestTargetType.CUSTOMER:
-        return '고객';
+        return t('targetType.CUSTOMER');
       case AccessRequestTargetType.TRANSACTION:
-        return '거래';
+        return t('targetType.TRANSACTION');
       default:
-        return type;
+        return String(type);
     }
   };
 
@@ -84,37 +90,37 @@ export const AccessRequestsList: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">열람 요청</h1>
+        <h1 className="page-title">{t('accessRequests.title')}</h1>
         {pendingRequests.length > 0 && canApprove && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <label className="form-label" style={{ marginBottom: 0, whiteSpace: 'nowrap' }}>
-              승인 시 열람 시간:
+              {t('common.accessDurationLabel')}
             </label>
             <input
               type="number"
-              min="1"
-              max="168"
+              min={1}
+              max={168}
               value={accessDuration}
               onChange={(e) => setAccessDuration(Number(e.target.value))}
               className="form-input"
               style={{ width: '60px' }}
             />
-            <span style={{ fontSize: '0.875rem', color: '#7f8c8d' }}>시간</span>
+            <span className="ui-text-muted" style={{ fontSize: '0.875rem' }}>
+              {t('common.hours')}
+            </span>
           </div>
         )}
       </div>
 
       {isLoading && (
         <div className="card">
-          <p style={{ textAlign: 'center', padding: '2rem' }}>로딩 중...</p>
+          <p className="ui-empty">{t('common.loading')}</p>
         </div>
       )}
 
       {error && (
         <div className="card">
-          <div style={{ backgroundColor: '#fee', color: '#c33', padding: '1rem', borderRadius: '4px' }}>
-            오류가 발생했습니다. 다시 시도해주세요.
-          </div>
+          <div className="ui-alert-error">{t('common.errorRetry')}</div>
         </div>
       )}
 
@@ -124,21 +130,21 @@ export const AccessRequestsList: React.FC = () => {
             <table className="table">
               <thead>
                 <tr>
-                  <th>요청자</th>
-                  <th>대상 유형</th>
-                  <th>대상 ID</th>
-                  <th>사유</th>
-                  <th>상태</th>
-                  <th>요청일</th>
-                  <th>만료일</th>
-                  <th>작업</th>
+                  <th>{t('accessRequests.requester')}</th>
+                  <th>{t('accessRequests.targetType')}</th>
+                  <th>{t('accessRequests.targetId')}</th>
+                  <th>{t('common.reason')}</th>
+                  <th>{t('common.status')}</th>
+                  <th>{t('accessRequests.requestedAt')}</th>
+                  <th>{t('accessRequests.expiresAt')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {requests.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: '#95a5a6' }}>
-                      열람 요청이 없습니다.
+                    <td colSpan={8} className="ui-empty">
+                      {t('accessRequests.empty')}
                     </td>
                   </tr>
                 ) : (
@@ -148,18 +154,12 @@ export const AccessRequestsList: React.FC = () => {
                       <td>{getTargetTypeLabel(request.targetType)}</td>
                       <td>
                         {request.targetType === AccessRequestTargetType.CUSTOMER && (
-                          <Link
-                            to={`/customers/${request.targetId}`}
-                            style={{ color: '#3498db', textDecoration: 'none' }}
-                          >
+                          <Link to={`/customers/${request.targetId}`} className="ui-link">
                             {request.targetId}
                           </Link>
                         )}
                         {request.targetType === AccessRequestTargetType.TRANSACTION && (
-                          <Link
-                            to={`/transactions/${request.targetId}`}
-                            style={{ color: '#3498db', textDecoration: 'none' }}
-                          >
+                          <Link to={`/transactions/${request.targetId}`} className="ui-link">
                             {request.targetId}
                           </Link>
                         )}
@@ -169,46 +169,43 @@ export const AccessRequestsList: React.FC = () => {
                       </td>
                       <td>{request.reason || '-'}</td>
                       <td>
-                        <span
-                          className="badge"
-                          style={{
-                            backgroundColor: getStatusColor(request.status),
-                            color: 'white',
-                          }}
-                        >
+                        <span className="badge" style={accessRequestBadgeStyle(request.status)}>
                           {getStatusLabel(request.status)}
                         </span>
                       </td>
                       <td>{formatDateTime(request.createdAt)}</td>
                       <td>{request.expiresAt ? formatDateTime(request.expiresAt) : '-'}</td>
                       <td>
-                        {request.status === AccessRequestStatus.PENDING && (
-                          canApprove ? (
+                        {request.status === AccessRequestStatus.PENDING &&
+                          (canApprove ? (
                             <div className="button-group">
                               <button
+                                type="button"
                                 className="button button-primary"
                                 onClick={() => handleApprove(request.id)}
                                 disabled={approveMutation.isPending}
                                 style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                               >
-                                승인
+                                {t('common.approve')}
                               </button>
                               <button
+                                type="button"
                                 className="button button-danger"
                                 onClick={() => handleReject(request.id)}
                                 disabled={approveMutation.isPending}
                                 style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                               >
-                                거부
+                                {t('common.deny')}
                               </button>
                             </div>
                           ) : (
-                            <span style={{ color: '#95a5a6', fontSize: '0.875rem' }}>승인 권한 없음</span>
-                          )
-                        )}
+                            <span className="ui-text-muted" style={{ fontSize: '0.875rem' }}>
+                              {t('common.noPermission')}
+                            </span>
+                          ))}
                         {request.status === AccessRequestStatus.APPROVED && request.approvedBy && (
-                          <span style={{ fontSize: '0.875rem', color: '#7f8c8d' }}>
-                            {request.approvedBy.name} 승인
+                          <span className="ui-text-muted" style={{ fontSize: '0.875rem' }}>
+                            {t('common.approvedBy', { name: request.approvedBy.name })}
                           </span>
                         )}
                       </td>

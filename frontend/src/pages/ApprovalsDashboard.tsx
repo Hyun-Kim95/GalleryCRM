@@ -1,18 +1,19 @@
 import React from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { customersApi, Customer, CustomerStatus } from '../api/customers.api';
 import { artistsApi, Artist, ArtistStatus } from '../api/artists.api';
 import { transactionsApi, Transaction, TransactionStatus } from '../api/transactions.api';
 import { formatDate } from '../utils/date';
+import { formatMoneyAmount } from '../utils/numberFormat';
 import { useAuthStore } from '../store/authStore';
 
 export const ApprovalsDashboard: React.FC = () => {
-  const navigate = useNavigate();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuthStore();
-  
-  // 사원(STAFF)은 승인 권한이 없음
+
   const canApprove = user?.role !== 'STAFF';
 
   const { data: customersData } = useQuery({
@@ -31,24 +32,39 @@ export const ApprovalsDashboard: React.FC = () => {
   });
 
   const approveCustomerMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { status: CustomerStatus.APPROVED | CustomerStatus.REJECTED; rejectionReason?: string } }) =>
-      customersApi.approve(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { status: CustomerStatus.APPROVED | CustomerStatus.REJECTED; rejectionReason?: string };
+    }) => customersApi.approve(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
   });
 
   const approveArtistMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { status: ArtistStatus; rejectionReason?: string } }) =>
-      artistsApi.approve(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { status: ArtistStatus; rejectionReason?: string };
+    }) => artistsApi.approve(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['artists'] });
     },
   });
 
   const approveTransactionMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: { status: TransactionStatus.APPROVED | TransactionStatus.REJECTED; rejectionReason?: string } }) =>
-      transactionsApi.approve(id, data),
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { status: TransactionStatus.APPROVED | TransactionStatus.REJECTED; rejectionReason?: string };
+    }) => transactionsApi.approve(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
@@ -65,44 +81,44 @@ export const ApprovalsDashboard: React.FC = () => {
   };
 
   const handleReject = (type: 'customer' | 'artist' | 'transaction', id: string) => {
-    const reason = prompt('반려 사유를 입력하세요:');
+    const reason = window.prompt(t('common.rejectReasonPromptApproval'));
     if (!reason) return;
 
     if (type === 'customer') {
-      approveCustomerMutation.mutate({ id, data: { status: CustomerStatus.REJECTED, rejectionReason: reason } });
+      approveCustomerMutation.mutate({
+        id,
+        data: { status: CustomerStatus.REJECTED, rejectionReason: reason },
+      });
     } else if (type === 'artist') {
-      approveArtistMutation.mutate({ id, data: { status: ArtistStatus.REJECTED, rejectionReason: reason } });
+      approveArtistMutation.mutate({
+        id,
+        data: { status: ArtistStatus.REJECTED, rejectionReason: reason },
+      });
     } else {
-      approveTransactionMutation.mutate({ id, data: { status: TransactionStatus.REJECTED, rejectionReason: reason } });
+      approveTransactionMutation.mutate({
+        id,
+        data: { status: TransactionStatus.REJECTED, rejectionReason: reason },
+      });
     }
   };
 
   const pendingCustomers = customersData?.data || [];
   const pendingArtists = artists || [];
-  const pendingTransactions = transactions?.filter((t) => t.status === TransactionStatus.PENDING) || [];
-
-  const formatAmount = (amount: number | string, currency: string = 'KRW'): string => {
-    if (typeof amount === 'string') {
-      return amount;
-    }
-    if (amount === null || amount === undefined || Number.isNaN(amount)) {
-      return `0 ${currency}`;
-    }
-    const formatted = new Intl.NumberFormat('ko-KR').format(amount);
-    return `${formatted} ${currency}`;
-  };
+  const pendingTransactions =
+    transactions?.filter((row) => row.status === TransactionStatus.PENDING) || [];
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">승인 대기</h1>
+        <h1 className="page-title">{t('approvals.title')}</h1>
       </div>
 
-      {/* 고객 승인 대기 */}
       <div className="card">
-        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem' }}>고객 승인 대기 ({pendingCustomers.length}건)</h2>
+        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
+          {t('approvals.customersTitle', { count: pendingCustomers.length })}
+        </h2>
         {pendingCustomers.length === 0 ? (
-          <p style={{ color: '#95a5a6' }}>승인 대기 중인 고객이 없습니다.</p>
+          <p className="ui-text-muted">{t('approvals.noPendingCustomers')}</p>
         ) : (
           <div className="table-container">
             <table className="table" style={{ tableLayout: 'fixed' }}>
@@ -115,18 +131,18 @@ export const ApprovalsDashboard: React.FC = () => {
               </colgroup>
               <thead>
                 <tr>
-                  <th>이름</th>
-                  <th>이메일</th>
-                  <th>작성자</th>
-                  <th>등록일</th>
-                  <th>작업</th>
+                  <th>{t('common.name')}</th>
+                  <th>{t('common.email')}</th>
+                  <th>{t('common.writer')}</th>
+                  <th>{t('common.createdAtCol')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {pendingCustomers.map((customer: Customer) => (
                   <tr key={customer.id}>
                     <td>
-                      <Link to={`/customers/${customer.id}`} style={{ color: '#3498db', textDecoration: 'none' }}>
+                      <Link to={`/customers/${customer.id}`} className="ui-link">
                         {customer.name}
                       </Link>
                     </td>
@@ -137,22 +153,26 @@ export const ApprovalsDashboard: React.FC = () => {
                       {canApprove ? (
                         <div className="button-group">
                           <button
+                            type="button"
                             className="button button-primary"
                             onClick={() => handleApprove('customer', customer.id)}
                             disabled={approveCustomerMutation.isPending}
                           >
-                            승인
+                            {t('common.approve')}
                           </button>
                           <button
+                            type="button"
                             className="button button-danger"
                             onClick={() => handleReject('customer', customer.id)}
                             disabled={approveCustomerMutation.isPending}
                           >
-                            반려
+                            {t('common.reject')}
                           </button>
                         </div>
                       ) : (
-                        <span style={{ color: '#95a5a6', fontSize: '0.875rem' }}>승인 권한 없음</span>
+                        <span className="ui-text-muted" style={{ fontSize: '0.875rem' }}>
+                          {t('common.noPermission')}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -163,11 +183,12 @@ export const ApprovalsDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* 작가 승인 대기 */}
       <div className="card">
-        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem' }}>작가 승인 대기 ({pendingArtists.length}건)</h2>
+        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
+          {t('approvals.artistsTitle', { count: pendingArtists.length })}
+        </h2>
         {pendingArtists.length === 0 ? (
-          <p style={{ color: '#95a5a6' }}>승인 대기 중인 작가가 없습니다.</p>
+          <p className="ui-text-muted">{t('approvals.noPendingArtists')}</p>
         ) : (
           <div className="table-container">
             <table className="table" style={{ tableLayout: 'fixed' }}>
@@ -180,18 +201,18 @@ export const ApprovalsDashboard: React.FC = () => {
               </colgroup>
               <thead>
                 <tr>
-                  <th>이름</th>
-                  <th>국적</th>
-                  <th>장르</th>
-                  <th>등록일</th>
-                  <th>작업</th>
+                  <th>{t('common.name')}</th>
+                  <th>{t('common.nationality')}</th>
+                  <th>{t('common.genre')}</th>
+                  <th>{t('common.createdAtCol')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {pendingArtists.map((artist: Artist) => (
                   <tr key={artist.id}>
                     <td>
-                      <Link to={`/artists/${artist.id}`} style={{ color: '#3498db', textDecoration: 'none' }}>
+                      <Link to={`/artists/${artist.id}`} className="ui-link">
                         {artist.name}
                       </Link>
                     </td>
@@ -202,22 +223,26 @@ export const ApprovalsDashboard: React.FC = () => {
                       {canApprove ? (
                         <div className="button-group">
                           <button
+                            type="button"
                             className="button button-primary"
                             onClick={() => handleApprove('artist', artist.id)}
                             disabled={approveArtistMutation.isPending}
                           >
-                            승인
+                            {t('common.approve')}
                           </button>
                           <button
+                            type="button"
                             className="button button-danger"
                             onClick={() => handleReject('artist', artist.id)}
                             disabled={approveArtistMutation.isPending}
                           >
-                            반려
+                            {t('common.reject')}
                           </button>
                         </div>
                       ) : (
-                        <span style={{ color: '#95a5a6', fontSize: '0.875rem' }}>승인 권한 없음</span>
+                        <span className="ui-text-muted" style={{ fontSize: '0.875rem' }}>
+                          {t('common.noPermission')}
+                        </span>
                       )}
                     </td>
                   </tr>
@@ -228,11 +253,12 @@ export const ApprovalsDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* 거래 승인 대기 */}
       <div className="card">
-        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem' }}>거래 승인 대기 ({pendingTransactions.length}건)</h2>
+        <h2 style={{ margin: '0 0 1rem 0', fontSize: '1.25rem' }}>
+          {t('approvals.transactionsTitle', { count: pendingTransactions.length })}
+        </h2>
         {pendingTransactions.length === 0 ? (
-          <p style={{ color: '#95a5a6' }}>승인 대기 중인 거래가 없습니다.</p>
+          <p className="ui-text-muted">{t('approvals.noPendingTransactions')}</p>
         ) : (
           <div className="table-container">
             <table className="table" style={{ tableLayout: 'fixed' }}>
@@ -246,50 +272,56 @@ export const ApprovalsDashboard: React.FC = () => {
               </colgroup>
               <thead>
                 <tr>
-                  <th>고객</th>
-                  <th>작가</th>
-                  <th>금액</th>
-                  <th>거래일</th>
-                  <th>등록일</th>
-                  <th>작업</th>
+                  <th>{t('common.customer')}</th>
+                  <th>{t('common.artist')}</th>
+                  <th>{t('common.amount')}</th>
+                  <th>{t('common.transactionDate')}</th>
+                  <th>{t('common.createdAtCol')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
-                {pendingTransactions.map((transaction: Transaction) => (
-                  <tr key={transaction.id}>
+                {pendingTransactions.map((row: Transaction) => (
+                  <tr key={row.id}>
                     <td>
-                      <Link to={`/customers/${transaction.customerId}`} style={{ color: '#3498db', textDecoration: 'none' }}>
-                        {transaction.isMasked ? '***' : transaction.customer.name}
+                      <Link to={`/customers/${row.customerId}`} className="ui-link">
+                        {row.isMasked ? '***' : row.customer.name}
                       </Link>
                     </td>
                     <td>
-                      <Link to={`/artists/${transaction.artistId}`} style={{ color: '#3498db', textDecoration: 'none' }}>
-                        {transaction.artist.name}
+                      <Link to={`/artists/${row.artistId}`} className="ui-link">
+                        {row.artist.name}
                       </Link>
                     </td>
-                    <td>{transaction.isMasked ? '***' : formatAmount(transaction.amount, transaction.currency)}</td>
-                    <td>{formatDate(transaction.transactionDate)}</td>
-                    <td>{formatDate(transaction.createdAt)}</td>
+                    <td>
+                      {row.isMasked ? '***' : formatMoneyAmount(row.amount as number | string, row.currency)}
+                    </td>
+                    <td>{formatDate(row.transactionDate)}</td>
+                    <td>{formatDate(row.createdAt)}</td>
                     <td>
                       {canApprove ? (
                         <div className="button-group">
                           <button
+                            type="button"
                             className="button button-primary"
-                            onClick={() => handleApprove('transaction', transaction.id)}
+                            onClick={() => handleApprove('transaction', row.id)}
                             disabled={approveTransactionMutation.isPending}
                           >
-                            승인
+                            {t('common.approve')}
                           </button>
                           <button
+                            type="button"
                             className="button button-danger"
-                            onClick={() => handleReject('transaction', transaction.id)}
+                            onClick={() => handleReject('transaction', row.id)}
                             disabled={approveTransactionMutation.isPending}
                           >
-                            반려
+                            {t('common.reject')}
                           </button>
                         </div>
                       ) : (
-                        <span style={{ color: '#95a5a6', fontSize: '0.875rem' }}>승인 권한 없음</span>
+                        <span className="ui-text-muted" style={{ fontSize: '0.875rem' }}>
+                          {t('common.noPermission')}
+                        </span>
                       )}
                     </td>
                   </tr>

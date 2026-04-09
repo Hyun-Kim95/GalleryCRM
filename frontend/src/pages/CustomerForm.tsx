@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { customersApi, CreateCustomerDto, UpdateCustomerDto } from '../api/customers.api';
 import { useAuthStore } from '../store/authStore';
 
 export const CustomerForm: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -66,30 +68,24 @@ export const CustomerForm: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{isEdit ? '고객 수정' : '등록'}</h1>
+        <h1 className="page-title">{isEdit ? t('customers.editTitle') : t('customers.newTitle')}</h1>
       </div>
 
       <div className="card">
         <form onSubmit={handleSubmit} className="form-container">
           {!isEdit && (
-            <div className="form-group" style={{ 
-              padding: '0.75rem', 
-              backgroundColor: '#e8f4f8', 
-              borderRadius: '4px',
-              marginBottom: '1rem',
-              border: '1px solid #3498db'
-            }}>
-              <div style={{ fontSize: '0.875rem', color: '#2c3e50', fontWeight: 500 }}>
-                담당 팀: {user?.team?.name || '팀 없음'}
+            <div className="form-group ui-callout-info" style={{ marginBottom: '1rem' }}>
+              <div style={{ fontSize: '0.875rem', color: 'var(--foreground)', fontWeight: 500 }}>
+                {t('customers.teamHint', { team: user?.team?.name || t('common.noTeam') })}
               </div>
-              <div style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                이 고객은 현재 로그인한 사용자의 팀에 자동으로 할당됩니다.
+              <div className="ui-text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                {t('customers.teamAutoAssign')}
               </div>
             </div>
           )}
           <div className="form-group">
             <label htmlFor="name" className="form-label">
-              이름 <span style={{ color: '#e74c3c' }}>*</span>
+              {t('common.name')} <span className="ui-required">*</span>
             </label>
             <input
               id="name"
@@ -103,7 +99,9 @@ export const CustomerForm: React.FC = () => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="email" className="form-label">이메일</label>
+              <label htmlFor="email" className="form-label">
+                {t('common.email')}
+              </label>
               <input
                 id="email"
                 type="email"
@@ -113,7 +111,9 @@ export const CustomerForm: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="phone" className="form-label">전화번호</label>
+              <label htmlFor="phone" className="form-label">
+                {t('common.phone')}
+              </label>
               <input
                 id="phone"
                 type="tel"
@@ -125,7 +125,9 @@ export const CustomerForm: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="address" className="form-label">주소</label>
+            <label htmlFor="address" className="form-label">
+              {t('common.address')}
+            </label>
             <input
               id="address"
               type="text"
@@ -136,7 +138,9 @@ export const CustomerForm: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="notes" className="form-label">메모</label>
+            <label htmlFor="notes" className="form-label">
+              {t('common.notes')}
+            </label>
             <textarea
               id="notes"
               className="form-textarea"
@@ -152,14 +156,14 @@ export const CustomerForm: React.FC = () => {
               className="button button-primary"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {createMutation.isPending || updateMutation.isPending ? '저장 중...' : '저장'}
+              {createMutation.isPending || updateMutation.isPending ? t('common.saving') : t('common.save')}
             </button>
             <button
               type="button"
               className="button button-outline"
               onClick={() => navigate(isEdit ? `/customers/${id}` : '/customers')}
             >
-              취소
+              {t('common.cancel')}
             </button>
           </div>
         </form>

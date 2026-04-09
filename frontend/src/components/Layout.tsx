@@ -1,7 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
 import { getRoleLabel } from '../utils/role';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeToggle } from './ThemeToggle';
 import './Layout.css';
 
 interface LayoutProps {
@@ -9,19 +12,31 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { t } = useTranslation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
 
-  // 모바일에서 메뉴 클릭 시 자동으로 닫기
+  const menuItems = useMemo(
+    () => [
+      { path: '/', labelKey: 'layout.nav.dashboard', icon: '📊' },
+      { path: '/customers', labelKey: 'layout.nav.customers', icon: '👥' },
+      { path: '/artists', labelKey: 'layout.nav.artists', icon: '🎨' },
+      { path: '/transactions', labelKey: 'layout.nav.transactions', icon: '💰' },
+      { path: '/approvals', labelKey: 'layout.nav.approvals', icon: '✅' },
+      { path: '/access-requests', labelKey: 'layout.nav.accessRequests', icon: '🔍' },
+      { path: '/audit-logs', labelKey: 'layout.nav.auditLogs', icon: '📝' },
+    ],
+    []
+  );
+
   const handleMenuClick = () => {
     setIsMobileMenuOpen(false);
     setIsSidebarOpen(false);
   };
 
-  // 화면 크기 변경 감지
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 768) {
@@ -39,35 +54,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login');
   };
 
-  const menuItems = [
-    { path: '/', label: '대시보드', icon: '📊' },
-    { path: '/customers', label: '고객 관리', icon: '👥' },
-    { path: '/artists', label: '작가 관리', icon: '🎨' },
-    { path: '/transactions', label: '거래 관리', icon: '💰' },
-    { path: '/approvals', label: '승인 대기', icon: '✅' },
-    { path: '/access-requests', label: '열람 요청', icon: '🔍' },
-    { path: '/audit-logs', label: '활동 로그', icon: '📝' },
-  ];
-
-  // 관리자 전용 메뉴
-  const adminMenuItems = [
-    { path: '/admin/users', label: '사용자 관리', icon: '👤' },
-    { path: '/teams', label: '팀 관리', icon: '👔' },
-  ];
-
   const isAdmin = user?.role === 'MASTER' || user?.role === 'ADMIN';
   const isManager = user?.role === 'MANAGER';
   const isStaff = user?.role === 'STAFF';
-  const canManageUsers = isAdmin || isManager || isStaff; // 관리자, 팀장, 사원 모두 접근 가능
+  const canManageUsers = isAdmin || isManager || isStaff;
 
   return (
     <div className="layout">
-      {/* 모바일 헤더 */}
       <header className="layout-header mobile-header">
         <button
           className="mobile-menu-button"
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-label="메뉴 열기"
+          aria-label={t('layout.openMenu')}
+          type="button"
         >
           <span className={`hamburger ${isMobileMenuOpen ? 'open' : ''}`}>
             <span></span>
@@ -75,43 +74,42 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <span></span>
           </span>
         </button>
-        <h1 className="layout-title">Gallery CRM</h1>
-        <div className="header-user-info">
-          <span className="user-name">{user?.name || '사용자'}</span>
+        <h1 className="layout-title">{t('app.title')}</h1>
+        <div className="header-tools header-user-info">
+          <span className="user-name">{user?.name || t('layout.user')}</span>
         </div>
       </header>
 
-      {/* 데스크톱 헤더 */}
       <header className="layout-header desktop-header">
-        <h1 className="layout-title">Gallery CRM</h1>
-        <div className="header-right">
+        <h1 className="layout-title">{t('app.title')}</h1>
+        <div className="header-right header-tools">
           <div className="user-info">
-            <span className="user-name">{user?.name || '사용자'}</span>
-            <span className="user-role">{getRoleLabel(user?.role)}</span>
+            <span className="user-name">{user?.name || t('layout.user')}</span>
+            <span className="user-role">{getRoleLabel(user?.role, t)}</span>
           </div>
-          <button className="logout-button" onClick={handleLogout}>
-            로그아웃
+          <button className="logout-button" onClick={handleLogout} type="button">
+            {t('layout.logout')}
           </button>
         </div>
       </header>
 
       <div className="layout-container">
-        {/* 모바일 사이드바 오버레이 */}
         {isMobileMenuOpen && (
           <div
             className="mobile-overlay"
             onClick={() => setIsMobileMenuOpen(false)}
+            aria-hidden="true"
           />
         )}
 
-        {/* 사이드바 */}
         <aside className={`sidebar ${isSidebarOpen ? 'open' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
           <div className="sidebar-header">
-            <h2>메뉴</h2>
+            <h2>{t('layout.menu')}</h2>
             <button
               className="sidebar-close-button"
               onClick={() => setIsSidebarOpen(false)}
-              aria-label="사이드바 닫기"
+              aria-label={t('layout.closeSidebar')}
+              type="button"
             >
               ×
             </button>
@@ -127,16 +125,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     onClick={handleMenuClick}
                   >
                     <span className="nav-icon">{item.icon}</span>
-                    <span className="nav-label">{item.label}</span>
+                    <span className="nav-label">{t(item.labelKey)}</span>
                   </Link>
                 </li>
               ))}
               {canManageUsers && (
                 <>
                   <li className="nav-divider">
-                    <span>관리</span>
+                    <span>{t('layout.adminSection')}</span>
                   </li>
-                  {/* 사용자 관리 - 관리자와 팀장 모두 접근 가능 */}
                   <li>
                     <Link
                       to="/admin/users"
@@ -144,10 +141,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       onClick={handleMenuClick}
                     >
                       <span className="nav-icon">👤</span>
-                      <span className="nav-label">사용자 관리</span>
+                      <span className="nav-label">{t('layout.nav.users')}</span>
                     </Link>
                   </li>
-                  {/* 팀 관리 - 관리자만 접근 가능 */}
                   {isAdmin && (
                     <li>
                       <Link
@@ -156,7 +152,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         onClick={handleMenuClick}
                       >
                         <span className="nav-icon">👔</span>
-                        <span className="nav-label">팀 관리</span>
+                        <span className="nav-label">{t('layout.nav.teams')}</span>
                       </Link>
                     </li>
                   )}
@@ -166,17 +162,22 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </nav>
 
           <div className="sidebar-footer">
-            <div className="sidebar-user-info">
-              <div className="user-name">{user?.name || '사용자'}</div>
-              <div className="user-role">{getRoleLabel(user?.role)}</div>
+            <div className="sidebar-footer-settings">
+              <ThemeToggle />
+              <LanguageSwitcher />
             </div>
-            <button className="logout-button" onClick={handleLogout}>
-              로그아웃
-            </button>
+            <div className="sidebar-footer-mobile-only">
+              <div className="sidebar-user-info">
+                <div className="user-name">{user?.name || t('layout.user')}</div>
+                <div className="user-role">{getRoleLabel(user?.role, t)}</div>
+              </div>
+              <button className="logout-button logout-button--block" onClick={handleLogout} type="button">
+                {t('layout.logout')}
+              </button>
+            </div>
           </div>
         </aside>
 
-        {/* 메인 컨텐츠 */}
         <main className="layout-main">
           <div className="content-wrapper">{children}</div>
         </main>

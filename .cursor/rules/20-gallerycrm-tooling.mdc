@@ -1,0 +1,23 @@
+---
+description: GalleryCRM 실제 스택(npm, NestJS, CRA)에 맞는 실행·패키지 규칙
+alwaysApply: true
+---
+
+이 저장소는 **Bun으로 앱 스택을 대체하지 않습니다.** 에이전트는 아래를 기본으로 따릅니다.
+
+## 패키지 매니저·실행
+
+- **Backend** (`backend/`): `npm install`, `npm run start:dev`, `npm run build`, `npm test`, `npm run test:e2e`, `npm run seed` 등 저장소 루트 `README.md`와 `backend/package.json`의 스크립트를 사용합니다.
+- **Frontend** (`frontend/`): Create React App(`react-scripts`). `npm start`, `npm run build`, `npm test`를 사용합니다. Vite·Bun 번들러로 이 프론트를 바꾸라고 제안하지 마세요(별도 결정이 없는 한).
+- **루트** `package.json`의 Bun 타입 등은 있을 수 있으나, **백엔드/프론트 작업 시 기본은 Node + npm**입니다.
+
+## 백엔드 기술 선택
+
+- API: **NestJS**, ORM: **TypeORM**, DB 드라이버: **`pg`**, 테스트: **Jest**. `Bun.sql`·`Bun.serve()`로 교체하라는 지시는 이 프로젝트에 맞지 않습니다.
+- 시드·일회성 스크립트는 저장소에 정의된 대로 **ts-node** 등을 사용합니다.
+
+## 프론트엔드
+
+- 번들: **webpack(react-scripts)**. Bun HTML import·Vite 전환은 범위 밖으로 가정합니다.
+
+에디터/규칙 충돌 시 **이 파일과 README의 실행 방법**을 우선합니다.

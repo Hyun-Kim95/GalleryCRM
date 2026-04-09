@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { artistsApi, CreateArtistDto, UpdateArtistDto, ArtistStatus } from '../api/artists.api';
+import { useTranslation } from 'react-i18next';
+import { artistsApi, CreateArtistDto, UpdateArtistDto } from '../api/artists.api';
 
 export const ArtistForm: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -62,14 +64,14 @@ export const ArtistForm: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{isEdit ? '작가 수정' : '작가 등록'}</h1>
+        <h1 className="page-title">{isEdit ? t('artists.editTitle') : t('artists.newTitle')}</h1>
       </div>
 
       <div className="card">
         <form onSubmit={handleSubmit} className="form-container">
           <div className="form-group">
             <label htmlFor="name" className="form-label">
-              이름 <span style={{ color: '#e74c3c' }}>*</span>
+              {t('common.name')} <span className="ui-required">*</span>
             </label>
             <input
               id="name"
@@ -83,7 +85,9 @@ export const ArtistForm: React.FC = () => {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="nationality" className="form-label">국적</label>
+              <label htmlFor="nationality" className="form-label">
+                {t('common.nationality')}
+              </label>
               <input
                 id="nationality"
                 type="text"
@@ -93,7 +97,9 @@ export const ArtistForm: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="genre" className="form-label">장르</label>
+              <label htmlFor="genre" className="form-label">
+                {t('common.genre')}
+              </label>
               <input
                 id="genre"
                 type="text"
@@ -105,7 +111,9 @@ export const ArtistForm: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="bio" className="form-label">소개</label>
+            <label htmlFor="bio" className="form-label">
+              {t('common.bio')}
+            </label>
             <textarea
               id="bio"
               className="form-textarea"
@@ -121,14 +129,14 @@ export const ArtistForm: React.FC = () => {
               className="button button-primary"
               disabled={createMutation.isPending || updateMutation.isPending}
             >
-              {createMutation.isPending || updateMutation.isPending ? '저장 중...' : '저장'}
+              {createMutation.isPending || updateMutation.isPending ? t('common.saving') : t('common.save')}
             </button>
             <button
               type="button"
               className="button button-outline"
               onClick={() => navigate(isEdit ? `/artists/${id}` : '/artists')}
             >
-              취소
+              {t('common.cancel')}
             </button>
           </div>
         </form>

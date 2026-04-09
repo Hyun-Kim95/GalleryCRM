@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../store/authStore';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { ThemeToggle } from '../components/ThemeToggle';
 import './Login.css';
 
 export const Login: React.FC = () => {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,7 +20,7 @@ export const Login: React.FC = () => {
     setError('');
 
     if (!email || !password) {
-      setError('이메일과 비밀번호를 입력해주세요.');
+      setError(t('login.errorRequired'));
       return;
     }
 
@@ -25,7 +29,7 @@ export const Login: React.FC = () => {
       await login(email, password);
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.message || '로그인에 실패했습니다.');
+      setError(err.response?.data?.message || t('login.errorFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -33,11 +37,15 @@ export const Login: React.FC = () => {
 
   return (
     <div className="login-page">
+      <div className="login-toolbar">
+        <ThemeToggle className="login-theme-toggle" />
+        <LanguageSwitcher className="login-lang-switcher" />
+      </div>
       <div className="login-container">
         <div className="login-card">
           <div className="login-header">
-            <h1 className="login-title">Gallery CRM</h1>
-            <p className="login-subtitle">갤러리 내부용 CRM 시스템</p>
+            <h1 className="login-title">{t('app.title')}</h1>
+            <p className="login-subtitle">{t('login.subtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
@@ -45,7 +53,7 @@ export const Login: React.FC = () => {
 
             <div className="form-group">
               <label htmlFor="email" className="form-label">
-                이메일
+                {t('login.email')}
               </label>
               <input
                 id="email"
@@ -53,7 +61,7 @@ export const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="form-input"
-                placeholder="이메일을 입력하세요"
+                placeholder={t('login.emailPlaceholder')}
                 autoComplete="email"
                 disabled={isLoading}
               />
@@ -61,7 +69,7 @@ export const Login: React.FC = () => {
 
             <div className="form-group">
               <label htmlFor="password" className="form-label">
-                비밀번호
+                {t('login.password')}
               </label>
               <input
                 id="password"
@@ -69,18 +77,14 @@ export const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input"
-                placeholder="비밀번호를 입력하세요"
+                placeholder={t('login.passwordPlaceholder')}
                 autoComplete="current-password"
                 disabled={isLoading}
               />
             </div>
 
-            <button
-              type="submit"
-              className="login-button"
-              disabled={isLoading}
-            >
-              {isLoading ? '로그인 중...' : '로그인'}
+            <button type="submit" className="login-button" disabled={isLoading}>
+              {isLoading ? t('login.submitting') : t('login.submit')}
             </button>
           </form>
         </div>

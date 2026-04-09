@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { adminUsersApi, AdminUser, CreateAdminUserDto, UpdateAdminUserDto } from '../api/admin-users.api';
 import { getRoleLabel } from '../utils/role';
 import { formatDate } from '../utils/date';
@@ -7,6 +8,7 @@ import { teamsApi } from '../api/teams.api';
 import { useAuthStore } from '../store/authStore';
 
 export const AdminUsers: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
   const isManager = currentUser?.role === 'MANAGER';
@@ -101,7 +103,7 @@ export const AdminUsers: React.FC = () => {
       setShowPasswordModal(false);
       setPasswordUser(null);
       setNewPassword('');
-      alert('비밀번호가 재설정되었습니다.');
+      alert(t('common.passwordResetDone'));
     },
   });
 
@@ -143,10 +145,17 @@ export const AdminUsers: React.FC = () => {
   const handleToggleActive = (user: AdminUser) => {
     // 본인 계정은 활성/비활성 변경 불가
     if (user.id === currentUser?.id) {
-      alert('본인 계정의 활성 상태는 변경할 수 없습니다.');
+      alert(t('common.cannotToggleSelf'));
       return;
     }
-    if (window.confirm(`${user.name} 사용자의 상태를 ${user.isActive ? '비활성' : '활성'}으로 변경하시겠습니까?`)) {
+    if (
+      window.confirm(
+        t('common.confirmToggleUser', {
+          name: user.name,
+          next: user.isActive ? t('common.inactive') : t('common.active'),
+        })
+      )
+    ) {
       updateMutation.mutate({
         id: user.id,
         data: { isActive: !user.isActive },
@@ -159,76 +168,61 @@ export const AdminUsers: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">사용자 관리</h1>
+        <h1 className="page-title">{t('adminUsers.title')}</h1>
         {(isAdmin || isManager) && (
           <button
+            type="button"
             className="button button-primary"
             onClick={() => setShowCreateModal(true)}
           >
-            등록
+            {t('common.register')}
           </button>
         )}
       </div>
 
       {isStaff && (
-        <div className="card" style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#e8f4f8', borderRadius: '4px', fontSize: '0.875rem' }}>
-          본인 계정 정보만 표시됩니다. 비밀번호를 변경할 수 있습니다.
+        <div className="ui-callout-info" style={{ marginBottom: '1rem' }}>
+          {t('adminUsers.staffBanner')}
         </div>
       )}
 
       {isLoading && (
         <div className="card">
-          <p style={{ textAlign: 'center', padding: '2rem' }}>로딩 중...</p>
+          <p className="ui-empty">{t('common.loading')}</p>
         </div>
       )}
 
       {error && (
         <div className="card">
-          <div
-            style={{
-              backgroundColor: '#fee',
-              color: '#c33',
-              padding: '1rem',
-              borderRadius: '4px',
-            }}
-          >
-            사용자 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
-          </div>
+          <div className="ui-alert-error">{t('adminUsers.loadError')}</div>
         </div>
       )}
 
       {filteredUsers && (
         <div className="card">
           {isManager && (
-            <div style={{ marginBottom: '1rem', padding: '0.75rem', backgroundColor: '#e8f4f8', borderRadius: '4px', fontSize: '0.875rem' }}>
-              본인 팀원만 표시됩니다. (총 {filteredUsers.length}명)
+            <div className="ui-callout-info" style={{ marginBottom: '1rem' }}>
+              {t('adminUsers.managerBanner', { count: filteredUsers.length })}
             </div>
           )}
           <div className="table-container">
             <table className="table">
               <thead>
                 <tr>
-                  <th>이름</th>
-                  <th>이메일</th>
-                  <th>역할</th>
-                  <th>팀</th>
-                  <th>상태</th>
-                  <th>등록일</th>
-                  <th>작업</th>
+                  <th>{t('common.name')}</th>
+                  <th>{t('common.email')}</th>
+                  <th>{t('common.role')}</th>
+                  <th>{t('common.team')}</th>
+                  <th>{t('common.status')}</th>
+                  <th>{t('common.createdAtCol')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      style={{
-                        textAlign: 'center',
-                        padding: '2rem',
-                        color: '#95a5a6',
-                      }}
-                    >
-                      {isManager ? '본인 팀원이 없습니다.' : '사용자 데이터가 없습니다.'}
+                    <td colSpan={7} className="ui-empty">
+                      {isManager ? t('adminUsers.emptyStaff') : t('adminUsers.empty')}
                     </td>
                   </tr>
                 ) : (
@@ -236,7 +230,7 @@ export const AdminUsers: React.FC = () => {
                     <tr key={user.id}>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
-                      <td>{getRoleLabel(user.role)}</td>
+                      <td>{getRoleLabel(user.role, t)}</td>
                       <td>{user.team?.name || '-'}</td>
                       <td>
                         <span
@@ -244,38 +238,39 @@ export const AdminUsers: React.FC = () => {
                             user.isActive ? 'badge badge-success' : 'badge badge-danger'
                           }
                         >
-                          {user.isActive ? '활성' : '비활성'}
+                          {user.isActive ? t('common.active') : t('common.inactive')}
                         </span>
                       </td>
                       <td>{formatDate(user.createdAt)}</td>
                       <td>
                         <div className="button-group">
-                          {/* 사원은 본인 계정만 보이므로 수정 버튼 숨김 (비밀번호만 변경 가능) */}
                           {!isStaff && (
                             <button
+                              type="button"
                               className="button button-outline"
                               onClick={() => handleEdit(user)}
                               style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                             >
-                              수정
+                              {t('common.edit')}
                             </button>
                           )}
                           <button
+                            type="button"
                             className="button button-outline"
                             onClick={() => handlePasswordReset(user)}
                             style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                           >
-                            비밀번호
+                            {t('common.password')}
                           </button>
-                          {/* 사원은 활성/비활성 버튼 숨김 */}
                           {!isStaff && user.id !== currentUser?.id && (
                             <button
+                              type="button"
                               className={`button ${user.isActive ? 'button-secondary' : 'button-primary'}`}
                               onClick={() => handleToggleActive(user)}
                               disabled={updateMutation.isPending}
                               style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                             >
-                              {user.isActive ? '비활성' : '활성'}
+                              {user.isActive ? t('common.inactive') : t('common.active')}
                             </button>
                           )}
                         </div>
@@ -293,11 +288,11 @@ export const AdminUsers: React.FC = () => {
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>등록</h2>
+            <h2 style={{ marginTop: 0 }}>{t('teams.createTitle')}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">
-                  이메일 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('login.email')} <span className="ui-required">*</span>
                 </label>
                 <input
                   type="email"
@@ -309,7 +304,7 @@ export const AdminUsers: React.FC = () => {
               </div>
               <div className="form-group">
                 <label className="form-label">
-                  이름 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('common.name')} <span className="ui-required">*</span>
                 </label>
                 <input
                   type="text"
@@ -321,7 +316,7 @@ export const AdminUsers: React.FC = () => {
               </div>
               <div className="form-group">
                 <label className="form-label">
-                  역할 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('common.role')} <span className="ui-required">*</span>
                 </label>
                 <select
                   className="form-select"
@@ -331,34 +326,31 @@ export const AdminUsers: React.FC = () => {
                     setFormData((prev) => ({
                       ...prev,
                       role: newRole,
-                      // 관리자 역할 선택 시 팀 자동 제거
                       teamId: newRole === 'ADMIN' ? undefined : prev.teamId,
                     }));
                   }}
                   required
                   disabled={isManager}
                 >
-                  <option value="STAFF">사원</option>
-                  {!isManager && <option value="MANAGER">팀장</option>}
-                  {isAdmin && <option value="ADMIN">관리자</option>}
+                  <option value="STAFF">{t('userRoleOption.STAFF')}</option>
+                  {!isManager && <option value="MANAGER">{t('userRoleOption.MANAGER')}</option>}
+                  {isAdmin && <option value="ADMIN">{t('userRoleOption.ADMIN')}</option>}
                 </select>
                 {isManager && (
-                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                    팀장은 사원만 등록할 수 있습니다.
+                  <p className="ui-text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {t('adminUsers.managerStaffOnly')}
                   </p>
                 )}
               </div>
               <div className="form-group">
-                <label className="form-label">
-                  팀
-                </label>
+                <label className="form-label">{t('common.team')}</label>
                 <select
                   className="form-select"
                   value={formData.teamId || ''}
                   onChange={(e) => setFormData((prev) => ({ ...prev, teamId: e.target.value || undefined }))}
                   disabled={isManager || formData.role === 'ADMIN'}
                 >
-                  {!isManager && <option value="">팀 없음</option>}
+                  {!isManager && <option value="">{t('adminUsers.noTeamOption')}</option>}
                   {availableTeams?.map((team) => (
                     <option key={team.id} value={team.id}>
                       {team.name}
@@ -366,19 +358,19 @@ export const AdminUsers: React.FC = () => {
                   ))}
                 </select>
                 {isManager && (
-                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                    본인 팀에만 등록됩니다.
+                  <p className="ui-text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {t('adminUsers.managerTeamOnly')}
                   </p>
                 )}
                 {formData.role === 'ADMIN' && (
-                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                    관리자는 팀 없음으로 고정됩니다.
+                  <p className="ui-text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {t('adminUsers.adminNoTeam')}
                   </p>
                 )}
               </div>
               <div className="form-group">
                 <label className="form-label">
-                  초기 비밀번호 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('common.initialPassword')} <span className="ui-required">*</span>
                 </label>
                 <input
                   type="password"
@@ -394,14 +386,14 @@ export const AdminUsers: React.FC = () => {
                   className="button button-primary"
                   disabled={createMutation.isPending}
                 >
-                  {createMutation.isPending ? '등록 중...' : '등록'}
+                  {createMutation.isPending ? t('common.registering') : t('common.register')}
                 </button>
                 <button
                   type="button"
                   className="button button-outline"
                   onClick={() => setShowCreateModal(false)}
                 >
-                  취소
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -413,35 +405,24 @@ export const AdminUsers: React.FC = () => {
       {showEditModal && editingUser && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>수정</h2>
+            <h2 style={{ marginTop: 0 }}>{t('teams.editTitle')}</h2>
             {isEditingSelf && (
-              <div style={{ 
-                marginBottom: '1rem', 
-                padding: '0.75rem', 
-                backgroundColor: '#fff3cd', 
-                borderRadius: '4px', 
-                fontSize: '0.875rem',
-                color: '#856404'
-              }}>
-                본인 계정은 비밀번호만 수정할 수 있습니다. 역할, 팀, 활성 상태는 변경할 수 없습니다.
+              <div className="ui-callout-warning" style={{ marginBottom: '1rem', padding: '0.75rem', fontSize: '0.875rem' }}>
+                {t('adminUsers.editSelfPasswordOnly')}
               </div>
             )}
             <form onSubmit={handleEditSubmit}>
               <div className="form-group">
-                <label className="form-label">이름</label>
-                <div style={{ padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                  {editingUser.name}
-                </div>
+                <label className="form-label">{t('common.name')}</label>
+                <div className="ui-field">{editingUser.name}</div>
               </div>
               <div className="form-group">
-                <label className="form-label">이메일</label>
-                <div style={{ padding: '0.75rem', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-                  {editingUser.email}
-                </div>
+                <label className="form-label">{t('login.email')}</label>
+                <div className="ui-field">{editingUser.email}</div>
               </div>
               <div className="form-group">
                 <label className="form-label">
-                  역할 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('common.role')} <span className="ui-required">*</span>
                 </label>
                 <select
                   className="form-select"
@@ -458,25 +439,25 @@ export const AdminUsers: React.FC = () => {
                   required
                   disabled={isManager || isEditingSelf}
                 >
-                  <option value="STAFF">사원</option>
-                  {!isManager && <option value="MANAGER">팀장</option>}
-                  {isAdmin && <option value="ADMIN">관리자</option>}
+                  <option value="STAFF">{t('userRoleOption.STAFF')}</option>
+                  {!isManager && <option value="MANAGER">{t('userRoleOption.MANAGER')}</option>}
+                  {isAdmin && <option value="ADMIN">{t('userRoleOption.ADMIN')}</option>}
                 </select>
                 {(isManager || isEditingSelf) && (
-                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                    {isEditingSelf ? '본인 계정의 역할은 변경할 수 없습니다.' : '팀장은 역할을 변경할 수 없습니다.'}
+                  <p className="ui-text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {isEditingSelf ? t('adminUsers.cannotChangeRoleSelf') : t('adminUsers.cannotChangeRoleManager')}
                   </p>
                 )}
               </div>
               <div className="form-group">
-                <label className="form-label">팀</label>
+                <label className="form-label">{t('common.team')}</label>
                 <select
                   className="form-select"
                   value={editFormData.teamId || ''}
                   onChange={(e) => setEditFormData((prev) => ({ ...prev, teamId: e.target.value || undefined }))}
                   disabled={isManager || isEditingSelf || editFormData.role === 'ADMIN'}
                 >
-                  {!isManager && <option value="">팀 없음</option>}
+                  {!isManager && <option value="">{t('adminUsers.noTeamOption')}</option>}
                   {availableTeams?.map((team) => (
                     <option key={team.id} value={team.id}>
                       {team.name}
@@ -484,25 +465,19 @@ export const AdminUsers: React.FC = () => {
                   ))}
                 </select>
                 {(isManager || isEditingSelf) && (
-                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                    {isEditingSelf ? '본인 계정의 팀은 변경할 수 없습니다.' : '팀장은 팀을 변경할 수 없습니다.'}
+                  <p className="ui-text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {isEditingSelf ? t('adminUsers.cannotChangeTeamSelf') : t('adminUsers.cannotChangeTeamManager')}
                   </p>
                 )}
                 {editFormData.role === 'ADMIN' && !isEditingSelf && (
-                  <p style={{ fontSize: '0.75rem', color: '#7f8c8d', marginTop: '0.25rem' }}>
-                    관리자는 팀 없음으로 고정됩니다.
+                  <p className="ui-text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    {t('adminUsers.adminNoTeam')}
                   </p>
                 )}
               </div>
               {isEditingSelf && (
-                <div style={{ 
-                  marginTop: '1rem', 
-                  padding: '0.75rem', 
-                  backgroundColor: '#e8f4f8', 
-                  borderRadius: '4px', 
-                  fontSize: '0.875rem' 
-                }}>
-                  비밀번호를 변경하려면 "비밀번호" 버튼을 사용하세요.
+                <div className="ui-callout-info" style={{ marginTop: '1rem' }}>
+                  {t('adminUsers.passwordHintSelf')}
                 </div>
               )}
               <div className="button-group" style={{ marginTop: '1.5rem' }}>
@@ -512,7 +487,7 @@ export const AdminUsers: React.FC = () => {
                     className="button button-primary"
                     disabled={updateMutation.isPending}
                   >
-                    {updateMutation.isPending ? '저장 중...' : '저장'}
+                    {updateMutation.isPending ? t('common.saving') : t('common.save')}
                   </button>
                 )}
                 <button
@@ -523,7 +498,7 @@ export const AdminUsers: React.FC = () => {
                     setEditingUser(null);
                   }}
                 >
-                  {isEditingSelf ? '닫기' : '취소'}
+                  {isEditingSelf ? t('common.close') : t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -535,14 +510,14 @@ export const AdminUsers: React.FC = () => {
       {showPasswordModal && passwordUser && (
         <div className="modal-overlay" onClick={() => setShowPasswordModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>비밀번호 재설정</h2>
-            <p style={{ marginBottom: '1rem', color: '#7f8c8d' }}>
-              {passwordUser.name} 사용자의 비밀번호를 재설정합니다.
+            <h2 style={{ marginTop: 0 }}>{t('common.passwordResetTitle')}</h2>
+            <p className="ui-text-muted" style={{ marginBottom: '1rem' }}>
+              {t('common.passwordResetDesc', { name: passwordUser.name })}
             </p>
             <form onSubmit={handlePasswordSubmit}>
               <div className="form-group">
                 <label className="form-label">
-                  새 비밀번호 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('common.newPassword')} <span className="ui-required">*</span>
                 </label>
                 <input
                   type="password"
@@ -559,14 +534,14 @@ export const AdminUsers: React.FC = () => {
                   className="button button-primary"
                   disabled={resetPasswordMutation.isPending}
                 >
-                  {resetPasswordMutation.isPending ? '재설정 중...' : '재설정'}
+                  {resetPasswordMutation.isPending ? t('common.resetting') : t('common.resetPassword')}
                 </button>
                 <button
                   type="button"
                   className="button button-outline"
                   onClick={() => setShowPasswordModal(false)}
                 >
-                  취소
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
