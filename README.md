@@ -8,8 +8,13 @@
 GalleryCRM/
 ├── backend/          # NestJS Backend API
 ├── frontend/         # React Frontend
-└── docs/             # 문서 (ERD, API 명세서 등)
+├── docs/             # 문서 (ERD, API 명세서, PRD·계획 등)
+├── reports/          # 테스트·리뷰·릴리즈 노트 (작업 시 갱신)
+├── AGENTS.md         # AI/에이전트 작업 규칙
+└── .cursor/          # Cursor 규칙·서브에이전트 정의
 ```
+
+기능 작업 시 문서 역할(`PROJECT_SUMMARY.md` vs `docs/prd.md` 등)은 **[docs/DOCUMENTATION_MAP.md](./docs/DOCUMENTATION_MAP.md)**를 참고하세요. 에이전트 절차는 **[AGENTS.md](./AGENTS.md)**를 따릅니다.
 
 ## 기술 스택
 
@@ -26,6 +31,7 @@ GalleryCRM/
 - **State Management**: Zustand
 - **Data Fetching**: TanStack Query
 - **Forms**: React Hook Form
+- **i18n**: i18next + react-i18next (한국어 기본, 영어 선택)
 
 ## 주요 기능
 
@@ -111,6 +117,10 @@ npm start
 ```
 
 프론트엔드는 `http://localhost:3001`에서 실행됩니다.
+
+**UI 언어**: 로그인 화면 우측 상단과, 로그인 후 **좌측 메뉴(사이드바) 하단**에서 **한국어** / **English**를 선택할 수 있습니다. 값은 `localStorage` 키 `gallerycrm-lang`(`ko` | `en`)에 저장됩니다.
+
+**테마**: 같은 위치에서 **라이트** / **다크** 모드를 선택할 수 있습니다. 값은 `localStorage` 키 `gallerycrm-theme`(`light` | `dark`)에 저장되며, 다크 시 `html`에 `dark` 클래스가 붙어 [tweakcn modern-minimal](https://tweakcn.com/r/themes/modern-minimal.json) OKLCH 토큰(Inter / Source Serif 4 / JetBrains Mono)을 따릅니다. CRA 빌드에는 Tailwind 미포함이며 `src/index.css`에 토큰만 반영되어 있습니다.
 
 ## 환경 변수
 

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { teamsApi, Team, CreateTeamPayload, UpdateTeamPayload } from '../api/teams.api';
 import { formatDate } from '../utils/date';
 import { getRoleLabel } from '../utils/role';
 
 export const TeamsManagement: React.FC = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -72,7 +74,14 @@ export const TeamsManagement: React.FC = () => {
   };
 
   const handleToggleActive = (team: Team) => {
-    if (window.confirm(`${team.name} 팀의 상태를 ${team.isActive ? '비활성' : '활성'}으로 변경하시겠습니까?`)) {
+    if (
+      window.confirm(
+        t('common.confirmToggleTeam', {
+          name: team.name,
+          next: team.isActive ? t('common.inactive') : t('common.active'),
+        })
+      )
+    ) {
       updateMutation.mutate({
         id: team.id,
         data: { isActive: !team.isActive },
@@ -95,33 +104,25 @@ export const TeamsManagement: React.FC = () => {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">팀 관리</h1>
+        <h1 className="page-title">{t('teams.title')}</h1>
         <button
           className="button button-primary"
           onClick={() => setShowCreateModal(true)}
+          type="button"
         >
-          등록
+          {t('common.register')}
         </button>
       </div>
 
       {isLoading && (
         <div className="card">
-          <p style={{ textAlign: 'center', padding: '2rem' }}>로딩 중...</p>
+          <p className="ui-empty">{t('common.loading')}</p>
         </div>
       )}
 
       {error && (
         <div className="card">
-          <div
-            style={{
-              backgroundColor: '#fee',
-              color: '#c33',
-              padding: '1rem',
-              borderRadius: '4px',
-            }}
-          >
-            팀 정보를 불러오는 중 오류가 발생했습니다. 다시 시도해주세요.
-          </div>
+          <div className="ui-alert-error">{t('teams.loadError')}</div>
         </div>
       )}
 
@@ -132,26 +133,19 @@ export const TeamsManagement: React.FC = () => {
               <thead>
                 <tr>
                   <th style={{ width: '40px' }}></th>
-                  <th>팀 이름</th>
-                  <th>설명</th>
-                  <th>상태</th>
-                  <th>구성원 수</th>
-                  <th>생성일</th>
-                  <th>작업</th>
+                  <th>{t('common.teamName')}</th>
+                  <th>{t('common.description')}</th>
+                  <th>{t('common.status')}</th>
+                  <th>{t('common.members')}</th>
+                  <th>{t('common.created')}</th>
+                  <th>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {teams.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={7}
-                      style={{
-                        textAlign: 'center',
-                        padding: '2rem',
-                        color: '#95a5a6',
-                      }}
-                    >
-                      팀 데이터가 없습니다.
+                    <td colSpan={7} className="ui-empty">
+                      {t('teams.empty')}
                     </td>
                   </tr>
                 ) : (
@@ -160,7 +154,11 @@ export const TeamsManagement: React.FC = () => {
                     const memberCount = team.users?.length ?? 0;
                     return (
                       <React.Fragment key={team.id}>
-                        <tr style={{ backgroundColor: isExpanded ? '#f8f9fa' : 'transparent' }}>
+                        <tr
+                          style={{
+                            backgroundColor: isExpanded ? 'var(--table-row-hover)' : 'transparent',
+                          }}
+                        >
                           <td>
                             {memberCount > 0 && (
                               <button
@@ -171,12 +169,13 @@ export const TeamsManagement: React.FC = () => {
                                   cursor: 'pointer',
                                   fontSize: '1rem',
                                   padding: '0.25rem',
-                                  color: '#3498db',
+                                  color: 'var(--link)',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                 }}
-                                title={isExpanded ? '접기' : '펼치기'}
+                                title={isExpanded ? t('common.collapse') : t('common.expand')}
+                                type="button"
                               >
                                 {isExpanded ? '▼' : '▶'}
                               </button>
@@ -192,10 +191,10 @@ export const TeamsManagement: React.FC = () => {
                                 team.isActive ? 'badge badge-success' : 'badge badge-danger'
                               }
                             >
-                              {team.isActive ? '활성' : '비활성'}
+                              {team.isActive ? t('common.active') : t('common.inactive')}
                             </span>
                           </td>
-                          <td>{memberCount}명</td>
+                          <td>{t('common.memberCount', { count: memberCount })}</td>
                           <td>{formatDate(team.createdAt)}</td>
                           <td>
                             <div className="button-group">
@@ -204,15 +203,16 @@ export const TeamsManagement: React.FC = () => {
                                 onClick={() => handleEdit(team)}
                                 style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                               >
-                                수정
+                                {t('common.edit')}
                               </button>
                               <button
+                                type="button"
                                 className={`button ${team.isActive ? 'button-secondary' : 'button-primary'}`}
                                 onClick={() => handleToggleActive(team)}
                                 disabled={updateMutation.isPending}
                                 style={{ fontSize: '0.875rem', padding: '0.5rem 0.75rem' }}
                               >
-                                {team.isActive ? '비활성' : '활성'}
+                                {team.isActive ? t('common.inactive') : t('common.active')}
                               </button>
                             </div>
                           </td>
@@ -223,8 +223,8 @@ export const TeamsManagement: React.FC = () => {
                               <tr
                                 key={user.id}
                                 style={{
-                                  backgroundColor: '#f8f9fa',
-                                  borderLeft: '3px solid #3498db',
+                                  backgroundColor: 'var(--table-row-hover)',
+                                  borderLeft: '3px solid var(--primary)',
                                 }}
                               >
                                 <td></td>
@@ -235,7 +235,9 @@ export const TeamsManagement: React.FC = () => {
                                         width: '8px',
                                         height: '8px',
                                         borderRadius: '50%',
-                                        backgroundColor: user.isActive ? '#27ae60' : '#e74c3c',
+                                        backgroundColor: user.isActive
+                                          ? 'var(--indicator-active)'
+                                          : 'var(--indicator-inactive)',
                                         flexShrink: 0,
                                       }}
                                     ></span>
@@ -252,14 +254,14 @@ export const TeamsManagement: React.FC = () => {
                                       className="badge badge-info"
                                       style={{ fontSize: '0.75rem', flexShrink: 0 }}
                                     >
-                                      {getRoleLabel(user.role)}
+                                      {getRoleLabel(user.role, t)}
                                     </span>
                                   </div>
                                 </td>
                                 <td>
                                   <span
+                                    className="ui-text-muted"
                                     style={{
-                                      color: '#7f8c8d',
                                       fontSize: '0.875rem',
                                     }}
                                   >
@@ -271,7 +273,7 @@ export const TeamsManagement: React.FC = () => {
                                     className={user.isActive ? 'badge badge-success' : 'badge badge-danger'}
                                     style={{ fontSize: '0.75rem' }}
                                   >
-                                    {user.isActive ? '활성' : '비활성'}
+                                    {user.isActive ? t('common.active') : t('common.inactive')}
                                   </span>
                                 </td>
                                 <td></td>
@@ -295,11 +297,11 @@ export const TeamsManagement: React.FC = () => {
       {showCreateModal && (
         <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>등록</h2>
+            <h2 style={{ marginTop: 0 }}>{t('teams.createTitle')}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label className="form-label">
-                  팀 이름 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('common.teamName')} <span className="ui-required">*</span>
                 </label>
                 <input
                   type="text"
@@ -310,7 +312,7 @@ export const TeamsManagement: React.FC = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">설명</label>
+                <label className="form-label">{t('common.description')}</label>
                 <textarea
                   className="form-textarea"
                   value={formData.description}
@@ -324,14 +326,14 @@ export const TeamsManagement: React.FC = () => {
                   className="button button-primary"
                   disabled={createMutation.isPending}
                 >
-                  {createMutation.isPending ? '등록 중...' : '등록'}
+                  {createMutation.isPending ? t('common.registering') : t('common.register')}
                 </button>
                 <button
                   type="button"
                   className="button button-outline"
                   onClick={() => setShowCreateModal(false)}
                 >
-                  취소
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>
@@ -343,11 +345,11 @@ export const TeamsManagement: React.FC = () => {
       {showEditModal && editingTeam && (
         <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2 style={{ marginTop: 0 }}>수정</h2>
+            <h2 style={{ marginTop: 0 }}>{t('teams.editTitle')}</h2>
             <form onSubmit={handleEditSubmit}>
               <div className="form-group">
                 <label className="form-label">
-                  팀 이름 <span style={{ color: '#e74c3c' }}>*</span>
+                  {t('common.teamName')} <span className="ui-required">*</span>
                 </label>
                 <input
                   type="text"
@@ -358,7 +360,7 @@ export const TeamsManagement: React.FC = () => {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">설명</label>
+                <label className="form-label">{t('common.description')}</label>
                 <textarea
                   className="form-textarea"
                   value={editFormData.description || ''}
@@ -372,14 +374,14 @@ export const TeamsManagement: React.FC = () => {
                   className="button button-primary"
                   disabled={updateMutation.isPending}
                 >
-                  {updateMutation.isPending ? '저장 중...' : '저장'}
+                  {updateMutation.isPending ? t('common.saving') : t('common.save')}
                 </button>
                 <button
                   type="button"
                   className="button button-outline"
                   onClick={() => setShowEditModal(false)}
                 >
-                  취소
+                  {t('common.cancel')}
                 </button>
               </div>
             </form>

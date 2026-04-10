@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { transactionsApi, CreateTransactionDto, UpdateTransactionDto, TransactionStatus } from '../api/transactions.api';
+import { useTranslation } from 'react-i18next';
+import { transactionsApi, CreateTransactionDto, UpdateTransactionDto } from '../api/transactions.api';
 import { customersApi } from '../api/customers.api';
 import { artistsApi } from '../api/artists.api';
 import { useAuthStore } from '../store/authStore';
-
 export const TransactionForm: React.FC = () => {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -40,7 +41,6 @@ export const TransactionForm: React.FC = () => {
 
   useEffect(() => {
     if (transaction && isEdit) {
-      // 백엔드 마스킹/포맷으로 amount가 문자열이 될 수 있어 any로 받아 안전하게 숫자만 추출
       const amountValue: any = transaction.amount as any;
       const rawAmount =
         typeof amountValue === 'string'
@@ -65,8 +65,8 @@ export const TransactionForm: React.FC = () => {
       navigate('/transactions');
     },
     onError: (error: any) => {
-      console.error('Transaction creation error:', error);
-      const errorMessage = error.response?.data?.message || error.message || '거래 생성 중 오류가 발생했습니다.';
+      const errorMessage =
+        error.response?.data?.message || error.message || t('transactions.createError');
       alert(errorMessage);
     },
   });
@@ -79,33 +79,31 @@ export const TransactionForm: React.FC = () => {
       navigate(`/transactions/${id}`);
     },
     onError: (error: any) => {
-      console.error('Transaction update error:', error);
-      const errorMessage = error.response?.data?.message || error.message || '거래 수정 중 오류가 발생했습니다.';
+      const errorMessage =
+        error.response?.data?.message || error.message || t('transactions.updateError');
       alert(errorMessage);
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 데이터 검증
+
     if (!formData.customerId || !formData.artistId) {
-      alert('고객과 작가를 선택해주세요.');
+      alert(t('transactions.validationCustomerArtist'));
       return;
     }
-    
+
     if (formData.amount <= 0) {
-      alert('금액은 0보다 커야 합니다.');
+      alert(t('transactions.validationAmount'));
       return;
     }
-    
+
     if (!formData.transactionDate) {
-      alert('거래일을 선택해주세요.');
+      alert(t('transactions.validationDate'));
       return;
     }
 
     if (isEdit) {
-      // 수정 모드
       const updateData: UpdateTransactionDto = {
         customerId: formData.customerId,
         artistId: formData.artistId,
@@ -116,7 +114,6 @@ export const TransactionForm: React.FC = () => {
       };
       updateMutation.mutate(updateData);
     } else {
-      // 생성 모드
       const submitData: CreateTransactionDto = {
         customerId: formData.customerId,
         artistId: formData.artistId,
@@ -131,20 +128,18 @@ export const TransactionForm: React.FC = () => {
 
   const approvedCustomers = customers?.data?.filter((c) => c.status === 'APPROVED') || [];
   const approvedArtists = artistsData?.data || [];
-  
-  // 수정 모드일 때 거래에 연결된 고객/작가가 승인 목록에 없을 경우를 대비
-  const allCustomers = React.useMemo(() => {
+
+  const allCustomers = useMemo(() => {
     if (!isEdit || !transaction) return approvedCustomers;
-    
-    const currentCustomer = approvedCustomers.find(c => c.id === transaction.customerId);
+
+    const currentCustomer = approvedCustomers.find((c) => c.id === transaction.customerId);
     if (currentCustomer) return approvedCustomers;
-    
-    // 거래에 연결된 고객이 승인 목록에 없으면 추가
+
     return [
       ...approvedCustomers,
       {
         id: transaction.customerId,
-        name: transaction.customer?.name || '알 수 없음',
+        name: transaction.customer?.name || t('common.unknown'),
         email: transaction.customer?.email || null,
         phone: null,
         address: null,
@@ -161,22 +156,21 @@ export const TransactionForm: React.FC = () => {
         createdAt: '',
         updatedAt: '',
         isMasked: false,
-      }
+      },
     ];
-  }, [approvedCustomers, isEdit, transaction]);
-  
-  const allArtists = React.useMemo(() => {
+  }, [approvedCustomers, isEdit, transaction, t]);
+
+  const allArtists = useMemo(() => {
     if (!isEdit || !transaction) return approvedArtists;
-    
-    const currentArtist = approvedArtists.find(a => a.id === transaction.artistId);
+
+    const currentArtist = approvedArtists.find((a) => a.id === transaction.artistId);
     if (currentArtist) return approvedArtists;
-    
-    // 거래에 연결된 작가가 승인 목록에 없으면 추가
+
     return [
       ...approvedArtists,
       {
         id: transaction.artistId,
-        name: transaction.artist?.name || '알 수 없음',
+        name: transaction.artist?.name || t('common.unknown'),
         nationality: null,
         genre: null,
         bio: null,
@@ -190,42 +184,64 @@ export const TransactionForm: React.FC = () => {
         rejectionReason: null,
         createdAt: '',
         updatedAt: '',
-      }
+      },
     ];
-  }, [approvedArtists, isEdit, transaction]);
+  }, [approvedArtists, isEdit, transaction, t]);
 
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">{isEdit ? '거래 수정' : '등록'}</h1>
+        <h1 className="page-title">{isEdit ? t('transactions.editTitle') : t('transactions.newTitle')}</h1>
       </div>
 
       <div className="card">
         <form onSubmit={handleSubmit} className="form-container">
           {!isEdit && (
-            <div className="form-group" style={{ 
-              padding: '0.75rem', 
-              backgroundColor: user?.teamId ? '#e8f4f8' : '#fee',
-              borderRadius: '4px',
-              marginBottom: '1rem',
-              border: `1px solid ${user?.teamId ? '#3498db' : '#e74c3c'}`
-            }}>
-              <div style={{ fontSize: '0.875rem', color: user?.teamId ? '#2c3e50' : '#c33', fontWeight: 500 }}>
-                담당 팀: {user?.team?.name || '팀 없음'}
+            <div
+              className="form-group"
+              style={{
+                padding: '0.75rem',
+                backgroundColor: user?.teamId ? 'var(--info-bg)' : 'var(--error-bg)',
+                borderRadius: 'var(--radius)',
+                marginBottom: '1rem',
+                border: user?.teamId
+                  ? '1px solid var(--border-default)'
+                  : '1px solid var(--error-border)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: '0.875rem',
+                  color: user?.teamId ? 'var(--foreground)' : 'var(--error-text)',
+                  fontWeight: 500,
+                }}
+              >
+                {t('transactions.teamHint', { team: user?.team?.name || t('common.noTeam') })}
               </div>
-              <div style={{ fontSize: '0.75rem', color: user?.teamId ? '#7f8c8d' : (user?.role === 'ADMIN' || user?.role === 'MASTER') ? '#7f8c8d' : '#c33', marginTop: '0.25rem' }}>
-                {user?.teamId 
-                  ? '이 거래는 현재 로그인한 사용자의 팀에 자동으로 할당됩니다.'
-                  : (user?.role === 'ADMIN' || user?.role === 'MASTER')
-                    ? '관리자는 선택한 고객의 팀에 거래가 할당됩니다.'
-                    : '⚠️ 거래를 생성하려면 팀에 소속되어 있어야 합니다. 관리자에게 문의하세요.'}
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color:
+                    user?.teamId ||
+                    user?.role === 'ADMIN' ||
+                    user?.role === 'MASTER'
+                      ? 'var(--text-muted)'
+                      : 'var(--error-text)',
+                  marginTop: '0.25rem',
+                }}
+              >
+                {user?.teamId
+                  ? t('transactions.teamAssignStaff')
+                  : user?.role === 'ADMIN' || user?.role === 'MASTER'
+                    ? t('transactions.teamAssignAdmin')
+                    : t('transactions.teamRequired')}
               </div>
             </div>
           )}
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="customerId" className="form-label">
-                고객 <span style={{ color: '#e74c3c' }}>*</span>
+                {t('common.customer')} <span className="ui-required">*</span>
               </label>
               <select
                 id="customerId"
@@ -235,7 +251,7 @@ export const TransactionForm: React.FC = () => {
                 required
                 disabled={isEdit}
               >
-                <option value="">고객 선택</option>
+                <option value="">{t('transactions.selectCustomer')}</option>
                 {allCustomers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
                     {customer.name} {customer.email ? `(${customer.email})` : ''}
@@ -245,7 +261,7 @@ export const TransactionForm: React.FC = () => {
             </div>
             <div className="form-group">
               <label htmlFor="artistId" className="form-label">
-                작가 <span style={{ color: '#e74c3c' }}>*</span>
+                {t('common.artist')} <span className="ui-required">*</span>
               </label>
               <select
                 id="artistId"
@@ -254,7 +270,7 @@ export const TransactionForm: React.FC = () => {
                 onChange={(e) => setFormData((prev) => ({ ...prev, artistId: e.target.value }))}
                 required
               >
-                <option value="">작가 선택</option>
+                <option value="">{t('transactions.selectArtist')}</option>
                 {allArtists.map((artist) => (
                   <option key={artist.id} value={artist.id}>
                     {artist.name} {artist.nationality ? `(${artist.nationality})` : ''}
@@ -267,7 +283,7 @@ export const TransactionForm: React.FC = () => {
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="amount" className="form-label">
-                금액 <span style={{ color: '#e74c3c' }}>*</span>
+                {t('common.amount')} <span className="ui-required">*</span>
               </label>
               <input
                 id="amount"
@@ -284,22 +300,24 @@ export const TransactionForm: React.FC = () => {
               />
             </div>
             <div className="form-group">
-              <label htmlFor="currency" className="form-label">통화</label>
+              <label htmlFor="currency" className="form-label">
+                {t('common.currency')}
+              </label>
               <select
                 id="currency"
                 className="form-select"
                 value={formData.currency}
                 onChange={(e) => setFormData((prev) => ({ ...prev, currency: e.target.value }))}
               >
-                <option value="KRW">KRW (원)</option>
-                <option value="USD">USD (달러)</option>
-                <option value="EUR">EUR (유로)</option>
-                <option value="JPY">JPY (엔)</option>
+                <option value="KRW">{t('common.currencyKRW')}</option>
+                <option value="USD">{t('common.currencyUSD')}</option>
+                <option value="EUR">{t('common.currencyEUR')}</option>
+                <option value="JPY">{t('common.currencyJPY')}</option>
               </select>
             </div>
             <div className="form-group">
               <label htmlFor="transactionDate" className="form-label">
-                거래일 <span style={{ color: '#e74c3c' }}>*</span>
+                {t('common.transactionDate')} <span className="ui-required">*</span>
               </label>
               <input
                 id="transactionDate"
@@ -313,7 +331,9 @@ export const TransactionForm: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="contractTerms" className="form-label">계약 조건</label>
+            <label htmlFor="contractTerms" className="form-label">
+              {t('common.contractTerms')}
+            </label>
             <textarea
               id="contractTerms"
               className="form-textarea"
@@ -332,17 +352,20 @@ export const TransactionForm: React.FC = () => {
                 (!isEdit && !user?.teamId && user?.role !== 'ADMIN' && user?.role !== 'MASTER')
               }
             >
-              {isEdit 
-                ? (updateMutation.isPending ? '저장 중...' : '저장')
-                : (createMutation.isPending ? '저장 중...' : '저장')
-              }
+              {isEdit
+                ? updateMutation.isPending
+                  ? t('common.saving')
+                  : t('common.save')
+                : createMutation.isPending
+                  ? t('common.saving')
+                  : t('common.save')}
             </button>
             <button
               type="button"
               className="button button-outline"
               onClick={() => navigate(isEdit ? `/transactions/${id}` : '/transactions')}
             >
-              취소
+              {t('common.cancel')}
             </button>
           </div>
         </form>

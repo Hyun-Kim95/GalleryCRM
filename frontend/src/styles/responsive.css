@@ -2,9 +2,10 @@
 
 /* 카드 스타일 */
 .card {
-  background: white;
+  background: var(--bg-card);
+  border: 1px solid var(--card-border);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--card-elevation-shadow);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
 }
@@ -28,12 +29,12 @@
   width: 100%;
   border-collapse: collapse;
   min-width: 600px;
-  background-color: white;
+  background-color: var(--table-body-bg);
 }
 
 .table thead {
-  background-color: #34495e;
-  color: white;
+  background-color: var(--table-header-bg);
+  color: var(--table-header-text);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -50,12 +51,12 @@
 }
 
 .table tbody tr {
-  border-bottom: 1px solid #ecf0f1;
+  border-bottom: 1px solid var(--table-row-border);
   transition: background-color 0.2s;
 }
 
 .table tbody tr:hover {
-  background-color: #f8f9fa;
+  background-color: var(--table-row-hover);
 }
 
 .table td {
@@ -136,7 +137,7 @@
 .form-label {
   font-size: 0.9rem;
   font-weight: 500;
-  color: #2c3e50;
+  color: var(--text-primary);
 }
 
 .form-input,
@@ -144,10 +145,12 @@
 .form-textarea {
   width: 100%;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 1rem;
   transition: border-color 0.2s;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
 }
 
 @media (max-width: 480px) {
@@ -162,8 +165,8 @@
 .form-select:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
 .form-textarea {
@@ -210,40 +213,40 @@
 }
 
 .button-primary {
-  background-color: #667eea;
-  color: white;
+  background-color: var(--brand-primary);
+  color: var(--primary-foreground);
 }
 
 .button-primary:hover {
-  background-color: #5568d3;
+  background-color: var(--brand-primary-hover);
 }
 
 .button-secondary {
-  background-color: #95a5a6;
-  color: white;
+  background-color: var(--secondary);
+  color: var(--secondary-foreground);
 }
 
 .button-secondary:hover {
-  background-color: #7f8c8d;
+  background-color: color-mix(in oklch, var(--secondary) 92%, var(--foreground));
 }
 
 .button-danger {
-  background-color: #e74c3c;
-  color: white;
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
 }
 
 .button-danger:hover {
-  background-color: #c0392b;
+  background-color: color-mix(in oklch, var(--destructive) 88%, oklch(0.2 0.02 25));
 }
 
 .button-outline {
   background-color: transparent;
-  border: 1px solid #ddd;
-  color: #2c3e50;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
 }
 
 .button-outline:hover {
-  background-color: #f5f5f5;
+  background-color: var(--button-outline-hover);
 }
 
 @media (max-width: 480px) {
@@ -266,7 +269,7 @@
 .page-title {
   font-size: 1.75rem;
   font-weight: 600;
-  color: #2c3e50;
+  color: var(--text-primary);
   margin: 0;
 }
 
@@ -335,9 +338,11 @@
   flex: 1;
   min-width: 200px;
   padding: 0.75rem;
-  border: 1px solid #ddd;
+  border: 1px solid var(--input-border);
   border-radius: 6px;
   font-size: 0.9rem;
+  background-color: var(--input-bg);
+  color: var(--text-primary);
 }
 
 .filter-group {
@@ -416,23 +421,23 @@
 }
 
 .badge-success {
-  background-color: #d4edda;
-  color: #155724;
+  background-color: var(--badge-success-bg);
+  color: var(--badge-success-text);
 }
 
 .badge-warning {
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
 }
 
 .badge-danger {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: var(--badge-danger-bg);
+  color: var(--badge-danger-text);
 }
 
 .badge-info {
-  background-color: #d1ecf1;
-  color: #0c5460;
+  background-color: var(--badge-info-bg);
+  color: var(--badge-info-text);
 }
 
 /* 모달 및 오버레이 */
@@ -442,7 +447,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--overlay-scrim);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -451,7 +456,8 @@
 }
 
 .modal-content {
-  background: white;
+  background: var(--bg-card);
+  color: var(--text-primary);
   border-radius: 8px;
   padding: 1.5rem;
   max-width: 500px;
@@ -479,15 +485,16 @@
 
 .pagination button {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #ddd;
-  background: white;
+  border: 1px solid var(--border-default);
+  background: var(--bg-card);
+  color: var(--text-primary);
   border-radius: 4px;
   cursor: pointer;
   font-size: 0.875rem;
 }
 
 .pagination button:hover:not(:disabled) {
-  background-color: #f5f5f5;
+  background-color: var(--button-outline-hover);
 }
 
 .pagination button:disabled {
@@ -496,9 +503,9 @@
 }
 
 .pagination button.active {
-  background-color: #667eea;
-  color: white;
-  border-color: #667eea;
+  background-color: var(--brand-primary);
+  color: var(--primary-foreground);
+  border-color: var(--brand-primary);
 }
 
 @media (max-width: 480px) {
@@ -561,5 +568,119 @@
   .visible-mobile {
     display: block;
   }
+}
+
+/* 폼·인라인 대체용 (테마 연동) */
+.ui-required {
+  color: var(--destructive);
+}
+
+.ui-field {
+  padding: 0.75rem;
+  background-color: var(--muted);
+  color: var(--foreground);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-default);
+}
+
+.ui-field--min-h {
+  min-height: 100px;
+}
+
+.ui-rejection-field {
+  padding: 0.75rem;
+  border-radius: var(--radius);
+  background-color: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
+}
+
+.ui-alert-error {
+  background-color: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
+  padding: 1rem;
+  border-radius: var(--radius);
+}
+
+.ui-callout-info {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: var(--info-bg);
+  color: var(--info-text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}
+
+.ui-callout-warning {
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.ui-mask-hint {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background-color: var(--muted);
+  color: var(--text-muted);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border-default);
+  font-size: 0.875rem;
+}
+
+.ui-text-muted {
+  color: var(--text-muted);
+}
+
+.ui-link {
+  color: var(--link);
+  text-decoration: none;
+}
+
+.ui-link:hover {
+  text-decoration: underline;
+}
+
+.ui-empty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+}
+
+.ui-stat-label {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.ui-stat-value {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.ui-stat-value--pending {
+  color: var(--primary);
+}
+
+.ui-stat-value--accent {
+  color: var(--chart-4);
+}
+
+.audit-logs-table thead tr {
+  background-color: var(--table-header-bg);
+  color: var(--table-header-text);
+}
+
+.audit-logs-table tbody tr {
+  border-bottom: 1px solid var(--table-row-border);
+  background-color: var(--table-body-bg);
+}
+
+.audit-logs-table tbody tr:hover {
+  background-color: var(--table-row-hover);
 }
 

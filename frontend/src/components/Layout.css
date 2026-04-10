@@ -3,15 +3,16 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--bg-page);
 }
 
 /* 헤더 스타일 */
 .layout-header {
-  background-color: #2c3e50;
-  color: white;
+  background-color: var(--layout-header-bg);
+  color: var(--layout-header-text);
   padding: 1rem 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid var(--layout-header-separator);
+  box-shadow: none;
   z-index: 1000;
   position: sticky;
   top: 0;
@@ -41,7 +42,7 @@
 .mobile-menu-button {
   background: none;
   border: none;
-  color: white;
+  color: var(--layout-header-text);
   cursor: pointer;
   padding: 0.5rem;
   display: flex;
@@ -62,7 +63,7 @@
   display: block;
   width: 100%;
   height: 2px;
-  background-color: white;
+  background-color: var(--layout-header-text);
   transition: all 0.3s ease;
   border-radius: 2px;
 }
@@ -109,18 +110,18 @@
 }
 
 .logout-button {
-  background-color: #e74c3c;
-  color: white;
+  background-color: var(--destructive);
+  color: var(--destructive-foreground);
   border: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius);
   cursor: pointer;
   font-size: 0.875rem;
   transition: background-color 0.2s;
 }
 
 .logout-button:hover {
-  background-color: #c0392b;
+  background-color: color-mix(in oklch, var(--destructive) 88%, oklch(0.2 0.02 25));
 }
 
 /* 레이아웃 컨테이너 */
@@ -137,27 +138,28 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: var(--overlay-scrim);
   z-index: 998;
   display: none;
 }
 
 /* 사이드바 */
 .sidebar {
-  background-color: #34495e;
-  color: white;
+  background-color: var(--layout-sidebar-bg);
+  color: var(--layout-header-text);
   width: 250px;
   min-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  border-right: 1px solid var(--layout-sidebar-edge);
+  box-shadow: none;
   transition: transform 0.3s ease;
   z-index: 999;
 }
 
 .sidebar-header {
   padding: 1.25rem 1.5rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--layout-sidebar-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -172,7 +174,7 @@
 .sidebar-close-button {
   background: none;
   border: none;
-  color: white;
+  color: var(--layout-header-text);
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0;
@@ -202,22 +204,22 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.875rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in oklch, var(--sidebar-foreground) 78%, transparent);
   text-decoration: none;
   transition: all 0.2s;
   border-left: 3px solid transparent;
 }
 
 .nav-link:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-accent-foreground);
 }
 
 .nav-link.active {
-  background-color: rgba(52, 152, 219, 0.2);
-  color: white;
-  border-left-color: #3498db;
-  font-weight: 500;
+  background-color: color-mix(in oklch, var(--sidebar-primary) 20%, var(--sidebar));
+  color: var(--sidebar-foreground);
+  border-left-color: var(--sidebar-primary);
+  font-weight: 600;
 }
 
 .nav-icon {
@@ -233,7 +235,7 @@
 .nav-divider {
   padding: 1.25rem 1.5rem 0.5rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in oklch, var(--sidebar-foreground) 48%, transparent);
   text-transform: uppercase;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -244,15 +246,38 @@
   padding-top: 1.5rem;
 }
 
-/* 사이드바 푸터 */
+/* 사이드바 푸터 (언어·테마: 항상 하단 / 계정·로그아웃: 모바일만) */
 .sidebar-footer {
+  margin-top: auto;
   padding: 1rem 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  display: none; /* 데스크톱에서는 숨김 */
+  border-top: 1px solid var(--layout-sidebar-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar-footer-settings {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.65rem;
+}
+
+.sidebar-footer-settings .theme-toggle,
+.sidebar-footer-settings .language-switcher {
+  width: 100%;
+}
+
+.sidebar-footer-mobile-only {
+  display: none;
 }
 
 .sidebar-user-info {
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.logout-button--block {
+  width: 100%;
 }
 
 .sidebar-user-info .user-name {
@@ -310,8 +335,12 @@
     display: flex;
   }
 
-  .sidebar-footer {
-    display: block; /* 모바일에서만 표시 */
+  .sidebar-footer-mobile-only {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--layout-sidebar-border);
   }
 
   .layout-main {
@@ -415,15 +444,102 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in oklch, var(--sidebar-foreground) 6%, var(--sidebar));
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in oklch, var(--sidebar-foreground) 22%, var(--sidebar));
   border-radius: 3px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: color-mix(in oklch, var(--sidebar-foreground) 32%, var(--sidebar));
+}
+
+/* 헤더 보조 도구 */
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* 테마·언어 세그먼트 버튼 (좌우 토글) */
+.segmented {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--sidebar-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: color-mix(in oklch, var(--sidebar-foreground) 6%, var(--sidebar));
+}
+
+/* 사이드바 등: 옵션끼리 떨어진 개별 버튼 */
+.segmented--loose {
+  gap: 0.45rem;
+  border: none;
+  background: transparent;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.segmented__btn {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0.4rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+  border: none;
+  border-right: 1px solid var(--sidebar-border);
+  background: transparent;
+  color: color-mix(in oklch, var(--sidebar-foreground) 72%, transparent);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.segmented--loose .segmented__btn {
+  border: 1px solid var(--sidebar-segment-border, var(--sidebar-border));
+  border-radius: var(--radius);
+  background: color-mix(in oklch, var(--sidebar-foreground) 5%, var(--sidebar));
+}
+
+.segmented--loose .segmented__btn:hover:not(.segmented__btn--active) {
+  background: color-mix(in oklch, var(--sidebar-foreground) 11%, var(--sidebar));
+}
+
+.segmented:not(.segmented--loose) .segmented__btn:last-child {
+  border-right: none;
+}
+
+.segmented__btn:hover:not(.segmented__btn--active) {
+  background: color-mix(in oklch, var(--sidebar-foreground) 10%, var(--sidebar));
+  color: var(--sidebar-foreground);
+}
+
+.segmented--loose .segmented__btn:hover:not(.segmented__btn--active) {
+  color: var(--sidebar-foreground);
+}
+
+.segmented__btn--active {
+  background: color-mix(in oklch, var(--sidebar-primary) 22%, var(--sidebar));
+  color: var(--sidebar-foreground);
+  font-weight: 600;
+}
+
+.segmented--loose .segmented__btn--active {
+  border-color: color-mix(in oklch, var(--sidebar-border) 55%, var(--sidebar-primary) 45%);
+}
+
+.segmented__btn:focus {
+  outline: none;
+}
+
+.segmented__btn:focus-visible {
+  position: relative;
+  z-index: 1;
+  box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--sidebar-ring) 55%, transparent);
 }
 
