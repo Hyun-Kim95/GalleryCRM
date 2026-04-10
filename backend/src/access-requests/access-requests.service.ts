@@ -25,8 +25,23 @@ export class AccessRequestsService {
     createDto: CreateAccessRequestDto,
     requester: User,
   ): Promise<AccessRequest> {
-    // 이미 승인된 요청이 있고 아직 유효한지 확인
-    const existingRequest = await this.accessRequestRepository.findOne({
+    // 동일 요청자·동일 대상에 대해 검토 대기 중이면 추가 요청 불가
+    const pending = await this.accessRequestRepository.findOne({
+      where: {
+        requesterId: requester.id,
+        targetType: createDto.targetType,
+        targetId: createDto.targetId,
+        status: AccessRequestStatus.PENDING,
+      },
+    });
+    if (pending) {
+      throw new BadRequestException(
+        '이미 검토 중인 열람 요청이 있습니다. 승인·거부 처리 후 다시 요청할 수 있습니다.',
+      );
+    }
+
+    // 승인되었고 열람 만료 전이면 추가 요청 불가
+    const existingApproved = await this.accessRequestRepository.findOne({
       where: {
         requesterId: requester.id,
         targetType: createDto.targetType,
@@ -36,8 +51,10 @@ export class AccessRequestsService {
       },
     });
 
-    if (existingRequest) {
-      throw new BadRequestException('이미 승인된 열람 요청이 유효합니다.');
+    if (existingApproved) {
+      throw new BadRequestException(
+        '이미 승인된 열람이 유효합니다. 만료 후 다시 요청할 수 있습니다.',
+      );
     }
 
     const accessRequest = this.accessRequestRepository.create({

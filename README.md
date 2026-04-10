@@ -83,6 +83,7 @@ npm run start:dev
 # 2. 초기 데이터 생성 (새 터미널)
 cd backend
 npm run seed
+# 데모용 현실형 더미로 DB를 채우려면: npm run seed:demo (고객·작가·거래 등 초기화)
 
 # 3. Frontend 실행 (새 터미널)
 cd frontend
@@ -93,6 +94,7 @@ npm start
 ### 첫 로그인
 - 이메일: `admin@example.com`
 - 비밀번호: `admin123`
+- `npm run seed:demo` 실행 후에는 팀별 데모 계정도 동일 비밀번호(`admin123`)로 로그인할 수 있습니다. 목록은 [backend/README_SEED.md](./backend/README_SEED.md)를 참고하세요.
 - ⚠️ 로그인 후 즉시 비밀번호 변경 권장
 
 ## 개발 환경 설정
